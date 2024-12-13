@@ -1,6 +1,6 @@
 image:
   repository: mabecenter/erpnext
-  tag: xxx
+  tag: 0.0.1-8746d88
   pullPolicy: IfNotPresent
 
 persistence:
