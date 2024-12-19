@@ -153,6 +153,6 @@ resource "kubernetes_manifest" "argocd_application_erpnext" {
     kubernetes_namespace.erpnext
   ]
 
-  manifest = yamldecode(file("app.yaml"))
+  manifest = yamldecode(file("frappe/mabecenter.yaml"))
 
 }
