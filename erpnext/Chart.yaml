@@ -1,4 +1,0 @@
-dependencies:
-  - name: erpnext
-    version: "3.0.0"  # Ajusta según la versión
-    repository: "https://helm.erpnext.com"
