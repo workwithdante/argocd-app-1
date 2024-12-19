@@ -153,7 +153,7 @@ resource "kubernetes_manifest" "argocd_application_erpnext" {
     kubernetes_namespace.erpnext
   ]
 
-  manifest = yamldecode(templatefile("${path.module}/modules/argocd/frappe/mabecenter.yaml", {
+  manifest = yamldecode(templatefile(".terraform/modules/argocd/frappe/mabecenter.yaml", {
     branch_name = var.branch_name
   }))
 }
