@@ -1,3 +1,9 @@
+resource "kubernetes_namespace" "nfs" {
+  metadata {
+    name = "nfs"
+  }
+}
+
 resource "helm_release" "nfs_server" {
   name       = "in-cluster"
   repository = "https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner"
