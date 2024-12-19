@@ -1,12 +1,30 @@
 terraform {
   required_providers {
-    argocd = {
-      source  = "argoproj-labs/argocd"
-      version = "7.2.0"  # Asegúrate de que esta versión coincide con la que defines en el root
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
+    kubectl = {
+      source  = "alekc/kubectl"
+      version = "2.0.4"
     }
   }
+
+  required_version = ">= 1.2.0"
 }
 
-provider "argocd" {
-  # La configuración se hereda del módulo principal
+provider "kubernetes" {
+  # Se hereda del módulo principal
+}
+
+provider "helm" {
+  # Se hereda del módulo principal
+}
+
+provider "kubectl" {
+  # Se hereda del módulo principal
 }
