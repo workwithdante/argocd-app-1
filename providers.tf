@@ -16,15 +16,3 @@ terraform {
 
   required_version = ">= 1.2.0"
 }
-
-provider "kubernetes" {
-  # Se hereda del módulo principal
-}
-
-provider "helm" {
-  # Se hereda del módulo principal
-}
-
-provider "argocd" {
-  # Se hereda del módulo principal
-}
