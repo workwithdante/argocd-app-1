@@ -153,7 +153,39 @@ resource "kubernetes_manifest" "argocd_application_erpnext" {
     kubernetes_namespace.erpnext
   ]
 
-  manifest = yamldecode(templatefile(".terraform/modules/argocd/frappe/mabecenter.yaml", {
-    branch_name = var.branch_name
-  }))
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "erpnext"
+      namespace = "argocd"
+    }
+    spec = {
+      destination = {
+        namespace = kubernetes_namespace.erpnext.metadata[0].name
+        server    = "https://kubernetes.default.svc"
+      }
+      source = {
+        path      = "erpnext"
+        repoURL   = "https://github.com/mabecenter-it/helm"
+        targetRevision = var.branch_name
+        helm = {
+          valueFiles = [
+            "values.yaml"
+          ]
+        }
+      }
+      project = "default"
+      syncPolicy = {
+        automated = {
+          selfHeal = true
+          prune = true
+        }
+        syncOptions = [
+          "CreateNamespace=true",
+          "ServerSideApply=true"
+        ]
+      }
+    }
+  }
 }
