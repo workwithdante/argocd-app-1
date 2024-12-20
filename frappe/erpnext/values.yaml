@@ -353,7 +353,7 @@ jobs:
     jobName: "restore-job"
     backoffLimit: 1
     minio:
-      endpoint: "http://store-hl.storage.svc.cluster.local:9000"
+      endpoint: "store-hl.storage.svc.cluster.local:9000"
       bucket: "backups/erpnext"
       accessKey: "minio"
       secretKey: "minio123"

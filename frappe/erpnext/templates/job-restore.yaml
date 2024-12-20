@@ -27,14 +27,19 @@ spec:
         command: ["bash", "-c"]
         args:
           - >
-            LATEST_BACKUP=$(curl -s {{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/?list-type=2 |
-            grep "<Key>" | sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | sort | tail -n 1) &&
-            curl -o /home/frappe/restore/backup.sql.gz {{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/$LATEST_BACKUP --user "{{ .Values.jobs.restore.minio.accessKey }}:{{ .Values.jobs.restore.minio.secretKey }}" &&
-            gunzip /home/frappe/restore/backup.sql.gz &&
-            bench --site $(SITE_NAME) restore /home/frappe/restore/backup.sql --force &&
-            cp -r /home/frappe/restore/private /home/frappe/frappe-bench/sites/$(SITE_NAME)/private &&
-            cp -r /home/frappe/restore/public /home/frappe/frappe-bench/sites/$(SITE_NAME)/public;
-
+            FOLDER=$(curl -s http://{{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/?list-type=2 |
+            grep "<Key>" | sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | sort | tail -n 1 | cut -d'/' -f1) &&
+            curl -s http://{{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/?list-type=2 |
+            grep "<Key>" | sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | grep "^$FOLDER/" | \
+            while read FILE; do
+              curl -o "/home/frappe/restore/$(basename $FILE)" \
+              "http://{{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/$FILE" \
+              --user "{{ .Values.jobs.restore.minio.accessKey }}:{{ .Values.jobs.restore.minio.secretKey }}";
+            done &&
+            gunzip /home/frappe/restore/*-database.sql.gz &&
+            bench --site {{ .Values.jobs.restore.siteName }} restore /home/frappe/restore/*-database.sql --force &&
+            tar -xvf /home/frappe/restore/*-files.tar -C /home/frappe/frappe-bench/sites/{{ .Values.jobs.restore.siteName }}/public &&
+            tar -xvf /home/frappe/restore/*-private-files.tar -C /home/frappe/frappe-bench/sites
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
