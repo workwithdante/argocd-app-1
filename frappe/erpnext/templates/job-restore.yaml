@@ -26,7 +26,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["bash", "-c"]
         args:
-          - >
+          - |
             FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | sort | tail -n 1 | cut -d'/' -f1)
             if [ -z "$FOLDER" ]; then
               echo "No folder found."
@@ -62,6 +62,11 @@ spec:
             done
 
             echo "Download process completed."
+            gunzip /home/frappe/restore/*-database.sql.gz
+            bench --site {{ .Values.jobs.restore.siteName }} restore /home/frappe/restore/*-database.sql --force
+            tar -xvf /home/frappe/restore/*-files.tar -C /home/frappe/frappe-bench/sites/{{ .Values.jobs.restore.siteName }}/public
+            tar -xvf /home/frappe/restore/*-private-files.tar -C /home/frappe/frappe-bench/sites/{{ .Values.jobs.restore.siteName }}/private
+            echo "Restore process completed successfully."
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
