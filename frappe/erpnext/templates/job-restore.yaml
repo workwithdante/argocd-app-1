@@ -27,7 +27,7 @@ spec:
         command: ["bash", "-c"]
         args:
           - |
-            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | sort | tail -n 1 | cut -d'/' -f1)
+            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | awk -F'/' '{print $1}' | sort | uniq | tail -n 1)
             if [ -z "$FOLDER" ]; then
               echo "No folder found."
               exit 1
@@ -35,7 +35,7 @@ spec:
 
             echo "Selected folder: $FOLDER"
 
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | grep "^$FOLDER/")
+            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | grep "^$FOLDER/")
 
             if [ -z "$FILES" ]; then
               echo "No files found in folder $FOLDER."
@@ -53,7 +53,7 @@ spec:
               fi
 
               echo "Downloading $FILE as $BASENAME"
-              curl -o "/home/frappe/restore/$BASENAME" "http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/$FILE" --user "minio:minio123"
+              curl -o "/home/frappe/restore/$BASENAME" "http://store-hl.storage.svc.cluster.local:9000/erpnext/$FILE" --user "minio:minio123"
 
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
