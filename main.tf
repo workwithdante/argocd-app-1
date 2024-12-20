@@ -166,8 +166,8 @@ resource "kubernetes_manifest" "argocd_application_erpnext" {
         server    = "https://kubernetes.default.svc"
       }
       source = {
-        path      = "erpnext"
-        repoURL   = "https://github.com/mabecenter-it/helm"
+        path      = "frappe/erpnext"
+        repoURL   = "https://github.com/mabecenter-it/argocd-app"
         targetRevision = var.branch_name
         helm = {
           valueFiles = [
