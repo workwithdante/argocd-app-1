@@ -34,7 +34,7 @@ spec:
             fi
 
             echo "Selected folder: $FOLDER"
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | grep "^$FOLDER/")
+            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
 
             if [ -z "$FILES" ]; then
               echo "No files found in folder $FOLDER."
