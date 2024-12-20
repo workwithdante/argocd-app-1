@@ -28,12 +28,8 @@ spec:
         args:
           - >
             # Paso 1: Obtener el Folder Más Reciente
-            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
-              grep "<Key>" | \
-              sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | \
-              sort | \
-              tail -n 1 | \
-              cut -d'/' -f1)
+            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | sort | tail -n 1 | cut -d'/' -f1)
+
             echo "Selected folder: $FOLDER"
 
             # Paso 2: Listar Archivos Dentro del Folder
