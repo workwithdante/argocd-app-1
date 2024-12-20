@@ -255,7 +255,7 @@ persistence:
     enabled: true
     # existingClaim: "pvc-backups"
     size: 8Gi
-    storageClass: "hostpath"
+    storageClass: "backup"
     accessModes:
     - ReadWriteMany
   logs:
