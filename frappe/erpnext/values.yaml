@@ -253,9 +253,9 @@ socketio:
 persistence:
   worker:
     enabled: true
-    existingClaim: "nfs"
+    # existingClaim: "nfs"
     size: 8Gi
-    storageClass: "hostpath"
+    storageClass: "nfs"
     accessModes:
     - ReadWriteMany
   logs:
