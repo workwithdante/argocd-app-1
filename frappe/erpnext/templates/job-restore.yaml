@@ -33,10 +33,7 @@ spec:
             echo "Selected folder: $FOLDER"
 
             # Paso 2: Listar Archivos Dentro del Folder
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
-              grep "<Key>" | \
-              sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | \
-              grep "^$FOLDER/")
+            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | grep "^$FOLDER/")
 
             echo "Files to download:"
             echo "$FILES"
