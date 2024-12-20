@@ -1,0 +1,90 @@
+{{- if .Values.jobs.restore.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  {{- if .Values.jobs.restore.jobName }}
+  name: {{ .Values.jobs.restore.jobName }}
+  {{- else }}
+  name: {{ template "erpnext.fullname" . }}-restore-{{ now | date "20060102150405" }}
+  {{- end }}
+  labels:
+    {{- include "erpnext.labels" . | nindent 4 }}
+spec:
+  backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
+  template:
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: restore
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["bash", "-c"]
+        args:
+          - >
+            mc alias set minio {{ .Values.jobs.restore.minio.endpoint }} {{ .Values.jobs.restore.minio.accessKey }} {{ .Values.jobs.restore.minio.secretKey }} &&
+            LATEST_BACKUP=$(mc ls minio/{{ .Values.jobs.restore.minio.bucket }}/ | sort | tail -n 1 | awk '{print $NF}') &&
+            mc cp --recursive minio/{{ .Values.jobs.restore.minio.bucket }}/$LATEST_BACKUP /home/frappe/restore/ &&
+            bench --site=$(SITE_NAME) restore /home/frappe/restore/*.sql.gz --force &&
+            cp -r /home/frappe/restore/private /home/frappe/frappe-bench/sites/$(SITE_NAME)/private &&
+            cp -r /home/frappe/restore/public /home/frappe/frappe-bench/sites/$(SITE_NAME)/public;
+        env:
+          - name: "SITE_NAME"
+            value: "{{ .Values.jobs.restore.siteName }}"
+        resources:
+          {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
+        securityContext:
+          {{- toYaml $.Values.securityContext | nindent 10 }}
+        volumeMounts:
+          - name: sites-dir
+            mountPath: /home/frappe/frappe-bench/sites
+          - name: logs
+            mountPath: /home/frappe/frappe-bench/logs
+          - name: restore-dir
+            mountPath: /home/frappe/restore
+      restartPolicy: Never
+      volumes:
+        - name: sites-dir
+          {{- if .Values.persistence.worker.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.persistence.worker.existingClaim }}
+            claimName: {{ .Values.persistence.worker.existingClaim }}
+            {{- else }}
+            claimName: {{ template "erpnext.fullname" . }}
+            {{- end }}
+            readOnly: false
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          {{- if .Values.persistence.logs.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.persistence.logs.existingClaim }}
+            claimName: {{ .Values.persistence.logs.existingClaim }}
+            {{- else }}
+            claimName: {{ template "erpnext.fullname" . }}-logs
+            {{- end }}
+            readOnly: false
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: restore-dir
+          emptyDir: {}
+      {{- with .Values.jobs.restore.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.jobs.restore.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.jobs.restore.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

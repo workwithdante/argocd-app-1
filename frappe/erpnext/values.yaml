@@ -304,7 +304,7 @@ jobs:
 
   createSite:
     # jobName: ""
-    enabled: true
+    enabled: false
     forceCreate: false
     siteName: "erp.cluster.local"
     adminPassword: "changeit"
@@ -331,7 +331,7 @@ jobs:
 
   backup:
     # jobName: ""
-    enabled: true
+    enabled: false
     siteName: "erp.cluster.local"
     withFiles: true
     push:
@@ -346,6 +346,21 @@ jobs:
     nodeSelector: {}
     tolerations: []
     affinity: {}
+  
+  restore:
+    enabled: true
+    siteName: "staging-site.local"
+    jobName: "restore-job"
+    backoffLimit: 1
+    minio:
+      endpoint: "http://store-hl.storage.svc.cluster.local:9000"
+      bucket: "backups/erpnext"
+      accessKey: "minio"
+      secretKey: "minio123"
+    resources: {}
+    nodeSelector: {}
+    affinity: {}
+    tolerations: []
 
   migrate:
     # jobName: ""
