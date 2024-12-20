@@ -253,7 +253,7 @@ socketio:
 persistence:
   worker:
     enabled: true
-    existingClaim: "pvc-backups"
+    existingClaim: "nfs"
     size: 8Gi
     storageClass: "hostpath"
     accessModes:
