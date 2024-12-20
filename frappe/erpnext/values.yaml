@@ -334,6 +334,13 @@ jobs:
     enabled: true
     siteName: "erp.cluster.local"
     withFiles: true
+    push:
+      enabled: true
+      bucket: "erpnext"
+      region: "us-east-1"
+      accessKey: minio
+      secretKey: minio123
+      endpoint: http://store-hl.storage.svc.cluster.local:9000
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
