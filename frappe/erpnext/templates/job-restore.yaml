@@ -61,7 +61,7 @@ spec:
             done
 
             echo "Download process completed."
-            gunzip /home/frappe/restore/*-database.sql.gz
+
             bench --site {{ .Values.jobs.restore.siteName }} restore /home/frappe/restore/*-database.sql --force
             tar -xvf /home/frappe/restore/*-files.tar -C /home/frappe/frappe-bench/sites/{{ .Values.jobs.restore.siteName }}/public
             tar -xvf /home/frappe/restore/*-private-files.tar -C /home/frappe/frappe-bench/sites/{{ .Values.jobs.restore.siteName }}/private
