@@ -140,7 +140,8 @@ resource "kubernetes_manifest" "argocd_application_mariadb" {
 resource "time_sleep" "wait_for_services_erpnext" {
   depends_on = [
     helm_release.nfs_server,
-    kubernetes_secret.mariadb_credentials
+    kubernetes_secret.mariadb_credentials,
+    kubernetes_manifest.argocd_application_mariadb
   ]
 
   create_duration = "90s"
