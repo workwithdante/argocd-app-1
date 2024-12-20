@@ -253,11 +253,11 @@ socketio:
 persistence:
   worker:
     enabled: true
-    existingClaim: "pvc-backups"
+    # existingClaim: "pvc-backups"
     size: 8Gi
     storageClass: "hostpath"
     accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   logs:
     # Container based log search and analytics stack recommended
     enabled: false
