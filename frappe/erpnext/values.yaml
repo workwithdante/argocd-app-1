@@ -257,7 +257,7 @@ persistence:
     size: 8Gi
     storageClass: "hostpath"
     accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   logs:
     # Container based log search and analytics stack recommended
     enabled: false
