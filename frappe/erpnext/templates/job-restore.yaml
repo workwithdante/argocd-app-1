@@ -28,33 +28,53 @@ spec:
         args:
           - >
             # Paso 1: Obtener el Folder Más Reciente
-            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | sort | tail -n 1 | cut -d'/' -f1)
+            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
+              grep "<Key>" | \
+              sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | \
+              sort | \
+              tail -n 1 | \
+              cut -d'/' -f1)
+
+            if [[ -z "$FOLDER" ]]; then
+              echo "Error: No folder found."
+              exit 1
+            fi
 
             echo "Selected folder: $FOLDER"
 
             # Paso 2: Listar Archivos Dentro del Folder
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | grep "^$FOLDER/")
+            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
+              grep "<Key>" | \
+              sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | \
+              grep "^$FOLDER/")
+
+            if [[ -z "$FILES" ]]; then
+              echo "Error: No files found in folder $FOLDER."
+              exit 1
+            fi
 
             echo "Files to download:"
             echo "$FILES"
 
             # Paso 3: Descargar Cada Archivo
             for FILE in $FILES; do
-              echo "Downloading $FILE"
-              curl -o "/home/frappe/restore/$(basename $FILE)" \
+              BASENAME=$(basename "$FILE")
+              if [[ -z "$BASENAME" ]]; then
+                echo "Error: Invalid file name for $FILE."
+                continue
+              fi
+
+              echo "Downloading $FILE as $BASENAME"
+              curl -o "/home/frappe/restore/$BASENAME" \
                 "http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/$FILE" \
                 --user "minio:minio123"
+              if [[ $? -ne 0 ]]; then
+                echo "Error downloading $FILE"
+                continue
+              fi
             done
 
-            # Paso 4: Descomprimir y Restaurar la Base de Datos
-            gunzip /home/frappe/restore/*-database.sql.gz
-            bench --site erp.cluster.local restore /home/frappe/restore/*-database.sql --force
-
-            # Paso 5: Extraer Archivos Públicos y Privados
-            tar -xvf /home/frappe/restore/*-files.tar -C /home/frappe/frappe-bench/sites/erp.cluster.local/public
-            tar -xvf /home/frappe/restore/*-private-files.tar -C /home/frappe/frappe-bench/sites/erp.cluster.local/private
-
-            echo "Restore completed successfully!"
+            echo "Download process completed."
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
