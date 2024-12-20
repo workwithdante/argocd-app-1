@@ -253,9 +253,9 @@ socketio:
 persistence:
   worker:
     enabled: true
-    # existingClaim: "pvc-backups"
+    # existingClaim: ""
     size: 8Gi
-    storageClass: "backup"
+    storageClass: "nfs-backup"
     accessModes:
     - ReadWriteMany
   logs:
