@@ -30,7 +30,7 @@ spec:
             # Paso 1: Obtener el Folder Más Reciente
             FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
               grep "<Key>" | \
-              sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | \
+              sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | \
               sort | \
               tail -n 1 | \
               cut -d'/' -f1)
@@ -41,6 +41,7 @@ spec:
               grep "<Key>" | \
               sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | \
               grep "^$FOLDER/")
+
             echo "Files to download:"
             echo "$FILES"
 
