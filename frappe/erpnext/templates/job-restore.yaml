@@ -27,9 +27,9 @@ spec:
         command: ["bash", "-c"]
         args:
           - >
-            LATEST_BACKUP=$(curl -s http://{{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/?list-type=2 |
+            LATEST_BACKUP=$(curl -s {{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/?list-type=2 |
             grep "<Key>" | sed -n 's:.*<Key>\(.*\)</Key>.*:\1:p' | sort | tail -n 1) &&
-            curl -o /home/frappe/restore/backup.sql.gz http://{{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/$LATEST_BACKUP --user "{{ .Values.jobs.restore.minio.accessKey }}:{{ .Values.jobs.restore.minio.secretKey }}" &&
+            curl -o /home/frappe/restore/backup.sql.gz {{ .Values.jobs.restore.minio.endpoint }}/{{ .Values.jobs.restore.minio.bucket }}/$LATEST_BACKUP --user "{{ .Values.jobs.restore.minio.accessKey }}:{{ .Values.jobs.restore.minio.secretKey }}" &&
             gunzip /home/frappe/restore/backup.sql.gz &&
             bench --site $(SITE_NAME) restore /home/frappe/restore/backup.sql --force &&
             cp -r /home/frappe/restore/private /home/frappe/frappe-bench/sites/$(SITE_NAME)/private &&
