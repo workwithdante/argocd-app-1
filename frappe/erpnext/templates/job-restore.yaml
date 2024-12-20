@@ -27,48 +27,35 @@ spec:
         command: ["bash", "-c"]
         args:
           - >
-            # Paso 1: Obtener el Folder Más Reciente
-            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
-              grep "<Key>" | \
-              sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | \
-              sort | \
-              tail -n 1 | \
-              cut -d'/' -f1)
-
-            if [[ -z "$FOLDER" ]]; then
-              echo "Error: No folder found."
+            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | sort | tail -n 1 | cut -d'/' -f1)
+            if [ -z "$FOLDER" ]; then
+              echo "No folder found."
               exit 1
             fi
 
             echo "Selected folder: $FOLDER"
 
-            # Paso 2: Listar Archivos Dentro del Folder
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | \
-              grep "<Key>" | \
-              sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | \
-              grep "^$FOLDER/")
+            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | grep "^$FOLDER/")
 
-            if [[ -z "$FILES" ]]; then
-              echo "Error: No files found in folder $FOLDER."
+            if [ -z "$FILES" ]; then
+              echo "No files found in folder $FOLDER."
               exit 1
             fi
 
             echo "Files to download:"
             echo "$FILES"
 
-            # Paso 3: Descargar Cada Archivo
             for FILE in $FILES; do
               BASENAME=$(basename "$FILE")
-              if [[ -z "$BASENAME" ]]; then
-                echo "Error: Invalid file name for $FILE."
+              if [ -z "$BASENAME" ]; then
+                echo "Invalid file name for $FILE."
                 continue
               fi
 
               echo "Downloading $FILE as $BASENAME"
-              curl -o "/home/frappe/restore/$BASENAME" \
-                "http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/$FILE" \
-                --user "minio:minio123"
-              if [[ $? -ne 0 ]]; then
+              curl -o "/home/frappe/restore/$BASENAME" "http://store-hl.storage.svc.cluster.local:9000/backups/erpnext/$FILE" --user "minio:minio123"
+
+              if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
                 continue
               fi
