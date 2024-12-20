@@ -255,15 +255,22 @@ persistence:
     enabled: true
     # existingClaim: ""
     size: 8Gi
-    storageClass: "nfs-backup"
+    storageClass: "nfs"
     accessModes:
     - ReadWriteMany
   logs:
     # Container based log search and analytics stack recommended
-    enabled: false
+    enabled: true
     # existingClaim: ""
     size: 8Gi
-    storageClass: "nfs"
+    storageClass: "nfs-backup"
+    accessModes:
+    - ReadWriteMany
+  backups:
+    enabled: true
+    # existingClaim: ""
+    size: 10Gi
+    storageClass: "nfs-backup"  # Utiliza nfs-backup para los backups
     accessModes:
     - ReadWriteMany
 
