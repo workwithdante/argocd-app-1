@@ -349,7 +349,7 @@ jobs:
     affinity: {}
   
   restore:
-    enabled: true
+    enabled: false
     siteName: "erp.cluster.local"
     jobName: "restore-job"
     backoffLimit: 1
