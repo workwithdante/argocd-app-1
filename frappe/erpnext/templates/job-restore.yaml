@@ -71,7 +71,7 @@ spec:
 
               echo "Downloading $FILE as $BASENAME"
               # Use -f to fail on HTTP errors and -S for error messages
-              curl -f -S -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FOLDER}/${FILE}"
+              curl -f -S -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FOLDER}/${FILE}" ${AUTH}
               
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
