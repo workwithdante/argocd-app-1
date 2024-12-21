@@ -71,7 +71,9 @@ spec:
 
               echo "Downloading $FILE as $BASENAME"
               # Use -f to fail on HTTP errors and -S for error messages
-              curl -f -S -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FOLDER}/${FILE}" ${AUTH}
+              curl -f -S "${STORAGE_URL}${FOLDER}/${FILE}" -o "${RESTORE_DIR}/${BASENAME}"
+
+              echo "$STORAGE_URL $FOLDER / $FILE -> $RESTORE_DIR / $BASENAME"
               
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
@@ -83,10 +85,10 @@ spec:
 
             echo "Download process completed."
 
-            DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql 2>/dev/null)
+            DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
             if [ -n "$DB_BACKUP_SQL" ]; then
               echo "Found uncompressed database backup: $DB_BACKUP_SQL"
-              bench --site "$SITE_NAME" restore ${RESTORE_DIR}/*-database.sql
+              bench --site "$SITE_NAME" restore ${RESTORE_DIR}/*-database.sql.gz
             else
               echo "No uncompressed database backup found."
             fi
