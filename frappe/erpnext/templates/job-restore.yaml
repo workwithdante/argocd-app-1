@@ -27,14 +27,22 @@ spec:
         command: ["bash", "-c"]
         args:
           - |
-            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 | grep "<Key>" | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" | awk -F'/' '{print $1}' | sort | uniq | tail -n 1)
+            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 \
+                | grep "<Key>" \
+                | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
+                | awk -F'/' '{print $1}' \
+                | sort | uniq | tail -n 1)
+
             if [ -z "$FOLDER" ]; then
               echo "No folder found."
               exit 1
             fi
 
             echo "Selected folder: $FOLDER"
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
+
+            # Fetch the list of files in the selected folder
+            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 \
+                | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
 
             if [ -z "$FILES" ]; then
               echo "No files found in folder $FOLDER."
@@ -44,6 +52,11 @@ spec:
             echo "Files to download:"
             echo "$FILES"
 
+            # Create restore directory if it doesn't exist
+            RESTORE_DIR="/home/frappe/restore"
+            mkdir -p "$RESTORE_DIR"
+
+            # Download each file
             for FILE in $FILES; do
               BASENAME=$(basename "$FILE")
               if [ -z "$BASENAME" ]; then
@@ -52,7 +65,7 @@ spec:
               fi
 
               echo "Downloading $FILE as $BASENAME"
-              curl -o "/home/frappe/restore/$BASENAME" "http://store-hl.storage.svc.cluster.local:9000/erpnext/$FILE" --user "minio:minio123"
+              curl -o "${RESTORE_DIR}/${BASENAME}" "http://store-hl.storage.svc.cluster.local:9000/erpnext/$FILE" --user "minio:minio123"
 
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
@@ -62,7 +75,45 @@ spec:
 
             echo "Download process completed."
 
-            bench --site {{ .Values.jobs.restore.siteName }} restore /home/frappe/restore/*-database.sql --force
+            # Decompress the database SQL file
+            DB_BACKUP_GZ=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
+            if [ -z "$DB_BACKUP_GZ" ]; then
+              echo "No compressed database backup file found."
+              exit 1
+            fi
+
+            echo "Decompressing $DB_BACKUP_GZ"
+            gunzip "$DB_BACKUP_GZ"
+
+            if [ $? -ne 0 ]; then
+              echo "Error decompressing $DB_BACKUP_GZ"
+              exit 1
+            fi
+
+            DB_BACKUP_SQL="${DB_BACKUP_GZ%.gz}"
+
+            if [ ! -f "$DB_BACKUP_SQL" ]; then
+              echo "Decompressed database backup file not found."
+              exit 1
+            fi
+
+            echo "Database backup decompressed to $DB_BACKUP_SQL"
+
+            # Restore the database using bench
+            SITE_NAME="{{ .Values.jobs.restore.siteName }}"
+            echo "Starting restore for site $SITE_NAME"
+
+            bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --force
+
+            if [ $? -ne 0 ]; then
+              echo "Database restore failed."
+              exit 1
+            fi
+
+            echo "Database restore completed successfully."
+
+            # Optionally, handle other backup files (e.g., files.tar, private-files.tar, site_config_backup.json)
+            # Depending on your restoration process, you might need to extract and place these files appropriately.
 
             echo "Restore process completed successfully."
         env:
