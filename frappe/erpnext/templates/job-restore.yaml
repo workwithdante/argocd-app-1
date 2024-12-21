@@ -131,7 +131,7 @@ spec:
             # Restore the database using bench
             echo "Starting restore for site $SITE_NAME"
 
-            bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --force
+            bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL"
 
             if [ $? -ne 0 ]; then
               echo "Database restore failed."
