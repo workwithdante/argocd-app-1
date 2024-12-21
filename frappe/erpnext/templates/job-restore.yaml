@@ -87,7 +87,7 @@ spec:
 
             DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
 
-            cp ${RESTORE_DIR}/*.json /home/frappe/frappe-bench/sites/${SITE_NAME}/site_config.json
+            #cp ${RESTORE_DIR}/*.json /home/frappe/frappe-bench/sites/${SITE_NAME}/site_config.json
 
             if [ -n "$DB_BACKUP_SQL" ]; then
               echo "Found uncompressed database backup: $DB_BACKUP_SQL"
