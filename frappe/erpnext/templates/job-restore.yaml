@@ -62,7 +62,7 @@ spec:
 
             echo "Download process completed."
 
-            bench --site {{ .Values.jobs.restore.siteName }} restore *-database.sql --force
+            bench --site {{ .Values.jobs.restore.siteName }} restore /home/frappe/restore/*-database.sql --force
 
             echo "Restore process completed successfully."
         env:
