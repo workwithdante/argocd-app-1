@@ -70,10 +70,13 @@ spec:
               fi
 
               echo "Downloading $FILE as $BASENAME"
-              curl -s -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FILE}" ${AUTH}
-
+              # Use -f to fail on HTTP errors and -S for error messages
+              curl -f -S -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FILE}" ${AUTH}
+              
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
+                # Optionally, remove the incomplete file
+                rm -f "${RESTORE_DIR}/${BASENAME}"
                 continue
               fi
             done
@@ -131,7 +134,7 @@ spec:
             # Restore the database using bench
             echo "Starting restore for site $SITE_NAME"
 
-            bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL"
+            bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --force
 
             if [ $? -ne 0 ]; then
               echo "Database restore failed."
@@ -140,8 +143,45 @@ spec:
 
             echo "Database restore completed successfully."
 
-            # Optional: Handle other backup files (e.g., files.tar, private-files.tar, site_config_backup.json)
-            # Add extraction steps as needed, similar to how the database backup was handled
+            # Handle other backup files
+
+            # Extract files.tar
+            FILES_TAR=$(ls ${RESTORE_DIR}/*-files.tar 2>/dev/null)
+            if [ -n "$FILES_TAR" ]; then
+              echo "Extracting $FILES_TAR to /home/frappe/frappe-bench/sites/$SITE_NAME/public/files/"
+              mkdir -p /home/frappe/frappe-bench/sites/$SITE_NAME/public/files/
+              tar -xf "$FILES_TAR" -C /home/frappe/frappe-bench/sites/$SITE_NAME/public/files/
+              
+              if [ $? -ne 0 ]; then
+                echo "Error extracting $FILES_TAR"
+                exit 1
+              fi
+            fi
+
+            # Extract private-files.tar
+            PRIVATE_FILES_TAR=$(ls ${RESTORE_DIR}/*-private-files.tar 2>/dev/null)
+            if [ -n "$PRIVATE_FILES_TAR" ]; then
+              echo "Extracting $PRIVATE_FILES_TAR to /home/frappe/frappe-bench/sites/$SITE_NAME/private/"
+              mkdir -p /home/frappe/frappe-bench/sites/$SITE_NAME/private/
+              tar -xf "$PRIVATE_FILES_TAR" -C /home/frappe/frappe-bench/sites/$SITE_NAME/private/
+              
+              if [ $? -ne 0 ]; then
+                echo "Error extracting $PRIVATE_FILES_TAR"
+                exit 1
+              fi
+            fi
+
+            # Restore site_config_backup.json
+            SITE_CONFIG_JSON=$(ls ${RESTORE_DIR}/*-site_config_backup.json 2>/dev/null)
+            if [ -n "$SITE_CONFIG_JSON" ]; then
+              echo "Restoring site config from $SITE_CONFIG_JSON"
+              cp "$SITE_CONFIG_JSON" /home/frappe/frappe-bench/sites/"$SITE_NAME"/site_config.json
+              
+              if [ $? -ne 0 ]; then
+                echo "Error restoring site config"
+                exit 1
+              fi
+            fi
 
             echo "Restore process completed successfully."
         env:
