@@ -91,10 +91,10 @@ spec:
 
             if [ -n "$DB_BACKUP_SQL" ]; then
               echo "Found uncompressed database backup: $DB_BACKUP_SQL"
-              bench --site "$SITE_NAME" restore ${RESTORE_DIR}/*-database.sql.gz --db-root-username=root --db-root-password=SMNGg8X66YhT7UfW
+              bench --site "$SITE_NAME" restore "${RESTORE_DIR}/*-database.sql.gz" --db-root-username=root --db-root-password=SMNGg8X66YhT7UfW
             else
               echo "No uncompressed database backup found."
-            fi
+            fi 
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
