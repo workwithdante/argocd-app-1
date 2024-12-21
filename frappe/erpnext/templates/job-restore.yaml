@@ -71,7 +71,7 @@ spec:
 
               echo "Downloading $FILE as $BASENAME"
               # Use -f to fail on HTTP errors and -S for error messages
-              curl -f -S -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FOLDER}/${FILE}" ${AUTH}
+              curl -f -S -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FOLDER}/${FILE}"
               
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
@@ -83,107 +83,13 @@ spec:
 
             echo "Download process completed."
 
-            # Decompress the database SQL file if it's gzipped
-            DB_BACKUP_GZ=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
-            DB_BACKUP_SQL=""
-
-            if [ -n "$DB_BACKUP_GZ" ]; then
-              echo "Found compressed database backup: $DB_BACKUP_GZ"
-              
-              # Check if the file is actually gzipped
-              if file "$DB_BACKUP_GZ" | grep -q 'gzip compressed data'; then
-                echo "Decompressing $DB_BACKUP_GZ"
-                gunzip "$DB_BACKUP_GZ"
-                
-                if [ $? -ne 0 ]; then
-                  echo "Error decompressing $DB_BACKUP_GZ"
-                  exit 1
-                fi
-                
-                DB_BACKUP_SQL="${DB_BACKUP_GZ%.gz}"
-                
-                if [ ! -f "$DB_BACKUP_SQL" ]; then
-                  echo "Decompressed database backup file not found."
-                  exit 1
-                fi
-                
-                echo "Database backup decompressed to $DB_BACKUP_SQL"
-              else
-                echo "Database backup file is not compressed."
-                DB_BACKUP_SQL="$DB_BACKUP_GZ"  # Even though it has .gz, it's not compressed
-              fi
+            DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql 2>/dev/null)
+            if [ -n "$DB_BACKUP_SQL" ]; then
+              echo "Found uncompressed database backup: $DB_BACKUP_SQL"
+              bench --site "$SITE_NAME" restore ${RESTORE_DIR}/*-database.sql
             else
-              echo "No compressed database backup file found."
-              # Check if there's an uncompressed SQL file
-              DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql 2>/dev/null)
-              
-              if [ -z "$DB_BACKUP_SQL" ]; then
-                echo "No database backup file found."
-                exit 1
-              else
-                echo "Using uncompressed database backup: $DB_BACKUP_SQL"
-              fi
+              echo "No uncompressed database backup found."
             fi
-
-            # Verify that the SQL file exists
-            if [ ! -f "$DB_BACKUP_SQL" ]; then
-              echo "Database backup file does not exist."
-              exit 1
-            fi
-
-            # Restore the database using bench
-            echo "Starting restore for site $SITE_NAME"
-
-            bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --force
-
-            if [ $? -ne 0 ]; then
-              echo "Database restore failed."
-              exit 1
-            fi
-
-            echo "Database restore completed successfully."
-
-            # Handle other backup files
-
-            # Extract files.tar
-            FILES_TAR=$(ls ${RESTORE_DIR}/*-files.tar 2>/dev/null)
-            if [ -n "$FILES_TAR" ]; then
-              echo "Extracting $FILES_TAR to /home/frappe/frappe-bench/sites/$SITE_NAME/public/files/"
-              mkdir -p /home/frappe/frappe-bench/sites/$SITE_NAME/public/files/
-              tar -xf "$FILES_TAR" -C /home/frappe/frappe-bench/sites/$SITE_NAME/public/files/
-              
-              if [ $? -ne 0 ]; then
-                echo "Error extracting $FILES_TAR"
-                exit 1
-              fi
-            fi
-
-            # Extract private-files.tar
-            PRIVATE_FILES_TAR=$(ls ${RESTORE_DIR}/*-private-files.tar 2>/dev/null)
-            if [ -n "$PRIVATE_FILES_TAR" ]; then
-              echo "Extracting $PRIVATE_FILES_TAR to /home/frappe/frappe-bench/sites/$SITE_NAME/private/"
-              mkdir -p /home/frappe/frappe-bench/sites/$SITE_NAME/private/
-              tar -xf "$PRIVATE_FILES_TAR" -C /home/frappe/frappe-bench/sites/$SITE_NAME/private/
-              
-              if [ $? -ne 0 ]; then
-                echo "Error extracting $PRIVATE_FILES_TAR"
-                exit 1
-              fi
-            fi
-
-            # Restore site_config_backup.json
-            SITE_CONFIG_JSON=$(ls ${RESTORE_DIR}/*-site_config_backup.json 2>/dev/null)
-            if [ -n "$SITE_CONFIG_JSON" ]; then
-              echo "Restoring site config from $SITE_CONFIG_JSON"
-              cp "$SITE_CONFIG_JSON" /home/frappe/frappe-bench/sites/"$SITE_NAME"/site_config.json
-              
-              if [ $? -ne 0 ]; then
-                echo "Error restoring site config"
-                exit 1
-              fi
-            fi
-
-            echo "Restore process completed successfully."
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
