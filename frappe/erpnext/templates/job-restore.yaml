@@ -27,7 +27,13 @@ spec:
         command: ["bash", "-c"]
         args:
           - |
-            FOLDER=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 \
+            STORAGE_URL="http://store-hl.storage.svc.cluster.local:9000/erpnext/"
+            AUTH="--user minio:minio123"
+            RESTORE_DIR="/home/frappe/restore"
+            SITE_NAME="{{ .Values.jobs.restore.siteName }}"  # Replace with actual site name if not using templating
+
+            # Fetch the latest folder from the storage
+            FOLDER=$(curl -s "${STORAGE_URL}?list-type=2" \
                 | grep "<Key>" \
                 | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
                 | awk -F'/' '{print $1}' \
@@ -41,7 +47,7 @@ spec:
             echo "Selected folder: $FOLDER"
 
             # Fetch the list of files in the selected folder
-            FILES=$(curl -s http://store-hl.storage.svc.cluster.local:9000/erpnext/?list-type=2 \
+            FILES=$(curl -s "${STORAGE_URL}?list-type=2" \
                 | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
 
             if [ -z "$FILES" ]; then
@@ -53,7 +59,6 @@ spec:
             echo "$FILES"
 
             # Create restore directory if it doesn't exist
-            RESTORE_DIR="/home/frappe/restore"
             mkdir -p "$RESTORE_DIR"
 
             # Download each file
@@ -65,7 +70,7 @@ spec:
               fi
 
               echo "Downloading $FILE as $BASENAME"
-              curl -o "${RESTORE_DIR}/${BASENAME}" "http://store-hl.storage.svc.cluster.local:9000/erpnext/$FILE" --user "minio:minio123"
+              curl -s -o "${RESTORE_DIR}/${BASENAME}" "${STORAGE_URL}${FILE}" ${AUTH}
 
               if [ $? -ne 0 ]; then
                 echo "Error downloading $FILE"
@@ -75,32 +80,55 @@ spec:
 
             echo "Download process completed."
 
-            # Decompress the database SQL file
+            # Decompress the database SQL file if it's gzipped
             DB_BACKUP_GZ=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
-            if [ -z "$DB_BACKUP_GZ" ]; then
+            DB_BACKUP_SQL=""
+
+            if [ -n "$DB_BACKUP_GZ" ]; then
+              echo "Found compressed database backup: $DB_BACKUP_GZ"
+              
+              # Check if the file is actually gzipped
+              if file "$DB_BACKUP_GZ" | grep -q 'gzip compressed data'; then
+                echo "Decompressing $DB_BACKUP_GZ"
+                gunzip "$DB_BACKUP_GZ"
+                
+                if [ $? -ne 0 ]; then
+                  echo "Error decompressing $DB_BACKUP_GZ"
+                  exit 1
+                fi
+                
+                DB_BACKUP_SQL="${DB_BACKUP_GZ%.gz}"
+                
+                if [ ! -f "$DB_BACKUP_SQL" ]; then
+                  echo "Decompressed database backup file not found."
+                  exit 1
+                fi
+                
+                echo "Database backup decompressed to $DB_BACKUP_SQL"
+              else
+                echo "Database backup file is not compressed."
+                DB_BACKUP_SQL="$DB_BACKUP_GZ"  # Even though it has .gz, it's not compressed
+              fi
+            else
               echo "No compressed database backup file found."
-              exit 1
+              # Check if there's an uncompressed SQL file
+              DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql 2>/dev/null)
+              
+              if [ -z "$DB_BACKUP_SQL" ]; then
+                echo "No database backup file found."
+                exit 1
+              else
+                echo "Using uncompressed database backup: $DB_BACKUP_SQL"
+              fi
             fi
 
-            echo "Decompressing $DB_BACKUP_GZ"
-            gunzip "$DB_BACKUP_GZ"
-
-            if [ $? -ne 0 ]; then
-              echo "Error decompressing $DB_BACKUP_GZ"
-              exit 1
-            fi
-
-            DB_BACKUP_SQL="${DB_BACKUP_GZ%.gz}"
-
+            # Verify that the SQL file exists
             if [ ! -f "$DB_BACKUP_SQL" ]; then
-              echo "Decompressed database backup file not found."
+              echo "Database backup file does not exist."
               exit 1
             fi
-
-            echo "Database backup decompressed to $DB_BACKUP_SQL"
 
             # Restore the database using bench
-            SITE_NAME="{{ .Values.jobs.restore.siteName }}"
             echo "Starting restore for site $SITE_NAME"
 
             bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --force
@@ -112,8 +140,8 @@ spec:
 
             echo "Database restore completed successfully."
 
-            # Optionally, handle other backup files (e.g., files.tar, private-files.tar, site_config_backup.json)
-            # Depending on your restoration process, you might need to extract and place these files appropriately.
+            # Optional: Handle other backup files (e.g., files.tar, private-files.tar, site_config_backup.json)
+            # Add extraction steps as needed, similar to how the database backup was handled
 
             echo "Restore process completed successfully."
         env:
