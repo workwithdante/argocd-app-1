@@ -349,7 +349,7 @@ jobs:
   
   restore:
     enabled: true
-    siteName: "staging-site.local"
+    siteName: "erp.cluster.local"
     jobName: "restore-job"
     backoffLimit: 1
     minio:
