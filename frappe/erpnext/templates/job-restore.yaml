@@ -27,6 +27,7 @@ spec:
         command: ["bash", "-c"]
         args:
           - |
+            bench new-site erp.cluster.local --no-mariadb-socket --db-type=mariadb --db-host=mariadb.database.svc.cluster.local --db-port=3306 --admin-password=changeit --mariadb-root-username=root --mariadb-root-password=SMNGg8X66YhT7UfW
             STORAGE_URL="http://store-hl.storage.svc.cluster.local:9000/erpnext/"
             AUTH="--user minio:minio123"
             RESTORE_DIR="/home/frappe/restore"
