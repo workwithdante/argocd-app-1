@@ -11,7 +11,7 @@ dbRds: false
 
 image:
   repository: mabecenter/erpnext
-  tag: 0.0.1-42b2b99
+  tag: 0.0.1-ee8cf58
   pullPolicy: IfNotPresent
 
 nginx:
