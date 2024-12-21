@@ -311,6 +311,7 @@ jobs:
     installApps:
     - "erpnext"
     - "mabecenter"
+    - "hrms"
     dbType: "mariadb"
     backoffLimit: 0
     resources: {}
