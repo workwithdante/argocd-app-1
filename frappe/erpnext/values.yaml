@@ -348,13 +348,13 @@ jobs:
     affinity: {}
   
   restore:
-    enabled: false
+    enabled: true
     siteName: "erp.cluster.local"
     jobName: "restore-job"
     backoffLimit: 1
     minio:
       endpoint: "store-hl.storage.svc.cluster.local:9000"
-      bucket: "backups/erpnext"
+      bucket: "erpnext"
       accessKey: "minio"
       secretKey: "minio123"
     resources: {}
