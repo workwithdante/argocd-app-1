@@ -29,12 +29,12 @@ spec:
           - >
             bench --site=$(SITE_NAME)
           {{- if .Values.jobs.backup.withFiles }}
-            backup --with-files
+            backup --with-files;
           {{- else }}
-            backup
+            backup;
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
-            echo "Nombre del Sitio: $(SITE_NAME)"
+            echo "Nombre del Sitio: $SITE_NAME"
 
             # Obtener el archivo de respaldo más reciente con extensión .gz o .json (ajustar según tus formatos)
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
@@ -66,6 +66,7 @@ spec:
               exit 1
             fi
           {{- end }}
+          {{- end }}
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.backup.siteName }}"
@@ -75,7 +76,6 @@ spec:
             value: "{{ .Values.jobs.backup.push.secretKey }}"
           - name: "BACKUP_PATH"
             value: "{{ .Values.jobs.backup.push.endpoint }}/{{ .Values.jobs.backup.push.bucket }}"
-
         resources:
           {{- toYaml .Values.jobs.backup.resources | nindent 10 }}
         securityContext:
