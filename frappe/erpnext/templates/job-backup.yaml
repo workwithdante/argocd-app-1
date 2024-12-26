@@ -35,11 +35,12 @@ spec:
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '^backup.*\.tar$' | tail -n 1);
-            echo $BACKUP_FILE;
+            echo $(BACKUP_FILE);
+            echo $(SITE_NAME);
             curl -X PUT "{{ .Values.jobs.backup.push.endpoint }}/{{ .Values.jobs.backup.push.bucket }}/$BACKUP_FILE" \
             -H "Content-Type: application/octet-stream" \
             -H "Authorization: AWS {{ .Values.jobs.backup.push.accessKey }}:$(echo -n "$BACKUP_FILE" | openssl sha1 -hmac {{ .Values.jobs.backup.push.secretKey }} | openssl base64)" \
-            --upload-file /home/frappe/frappe-bench/sites/$SITE_NAMEprivate/backups/\$BACKUP_FILE;
+            --upload-file /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/\$BACKUP_FILE;
           {{- end }}
         env:
           - name: "SITE_NAME"
