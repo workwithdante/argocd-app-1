@@ -34,14 +34,30 @@ spec:
             backup;
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
-            echo "Site Name: $SITE_NAME";
-            BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.gz$' | tail -n 1);
-            echo "Selected Backup File: $BACKUP_FILE";
-            SIGNATURE=$(echo -n "PUT\n\n\n$BACKUP_FILE\n\napplication/octet-stream" | openssl sha1 -hmac $SECRET_KEY | openssl base64 -A);
-            curl -X PUT "{{ .Values.jobs.backup.push.endpoint }}/{{ .Values.jobs.backup.push.bucket }}/$BACKUP_FILE" \
-            -H "Content-Type: application/octet-stream" \
-            -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
-            --upload-file /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE;
+            echo "Nombre del Sitio: $SITE_NAME"
+
+            # Definir la carpeta de destino dentro del bucket
+            DESTINATION_FOLDER="backups"
+
+            # Obtener el archivo de respaldo más reciente con extensión .gz
+            BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.gz$' | tail -n 1)
+            echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
+
+            # Construir el path completo dentro del bucket
+            OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
+            echo "Objeto en el Bucket: $OBJECT_KEY"
+
+            # Crear la firma HMAC para la solicitud PUT
+            STRING_TO_SIGN="PUT\n\n\n\napplication/octet-stream\n/$DESTINATION_FOLDER/$BACKUP_FILE"
+            SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+
+            # Realizar la subida del archivo utilizando curl
+            curl -X PUT "{{ .Values.jobs.backup.push.endpoint }}/{{ .Values.jobs.backup.push.bucket }}/$OBJECT_KEY" \
+                -H "Content-Type: application/octet-stream" \
+                -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
+                --upload-file "/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE"
+
+            echo "Archivo de respaldo subido correctamente a $OBJECT_KEY en el bucket {{ .Values.jobs.backup.push.bucket }}"
           {{- end }}
         env:
           - name: "SITE_NAME"
