@@ -34,9 +34,11 @@ spec:
             backup;
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
+            echo "Site Name: $SITE_NAME";
+            echo "Backup Files: $(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/)";
+            echo "Filtered Backup Files: $(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '^backup.*\.tar$')";
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '^backup.*\.tar$' | tail -n 1);
-            echo \$BACKUP_FILE;
-            echo $SITE_NAME;
+            echo "Selected Backup File: $BACKUP_FILE";
             SIGNATURE=$(echo -n "PUT\n\n\n$BACKUP_FILE\n\napplication/octet-stream" | openssl sha1 -hmac $SECRET_KEY | openssl base64 -A);
             curl -X PUT "{{ .Values.jobs.backup.push.endpoint }}/{{ .Values.jobs.backup.push.bucket }}/$BACKUP_FILE" \
             -H "Content-Type: application/octet-stream" \
