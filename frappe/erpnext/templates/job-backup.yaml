@@ -27,45 +27,45 @@ spec:
         command: ["bash", "-c"]
         args:
           - >
-            bench --site=$SITE_NAME
-            {{- if .Values.jobs.backup.withFiles }}
-              backup --with-files
-            {{- else }}
-              backup
-            {{- end }}
-            {{- if .Values.jobs.backup.push.enabled }}
-              echo "Nombre del Sitio: $SITE_NAME"
+            bench --site=$(SITE_NAME)
+          {{- if .Values.jobs.backup.withFiles }}
+            backup --with-files
+          {{- else }}
+            backup
+          {{- end }}
+          {{- if .Values.jobs.backup.push.enabled }}
+            echo "Nombre del Sitio: $(SITE_NAME)"
 
-              # Obtener el archivo de respaldo más reciente con extensión .gz o .json (ajustar según tus formatos)
-              BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
-              echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
+            # Obtener el archivo de respaldo más reciente con extensión .gz o .json (ajustar según tus formatos)
+            BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
+            echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
 
-              # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
-              DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
-              echo "Carpeta de Destino: $DESTINATION_FOLDER"
+            # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
+            DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
+            echo "Carpeta de Destino: $DESTINATION_FOLDER"
 
-              # Construir el path completo dentro del bucket
-              OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
-              echo "Objeto en el Bucket: $OBJECT_KEY"
+            # Construir el path completo dentro del bucket
+            OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
+            echo "Objeto en el Bucket: $OBJECT_KEY"
 
-              # Crear la firma HMAC para la solicitud PUT
-              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n\n/$DESTINATION_FOLDER/$BACKUP_FILE"
-              SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+            # Crear la firma HMAC para la solicitud PUT
+            STRING_TO_SIGN="PUT\n\napplication/octet-stream\n\n/$DESTINATION_FOLDER/$BACKUP_FILE"
+            SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
 
-              # Realizar la subida del archivo utilizando curl
-              curl -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
-                -H "Content-Type: application/octet-stream" \
-                -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
-                --upload-file "/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE"
+            # Realizar la subida del archivo utilizando curl
+            curl -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
+              -H "Content-Type: application/octet-stream" \
+              -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
+              --upload-file "/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE"
 
-              # Verificar el resultado de la subida
-              if [ $? -eq 0 ]; then
-                echo "Archivo de respaldo subido correctamente a $OBJECT_KEY en el bucket {{ .Values.jobs.backup.push.bucket }}"
-              else
-                echo "Error al subir el archivo de respaldo."
-                exit 1
-              fi
-            {{- end }}
+            # Verificar el resultado de la subida
+            if [ $? -eq 0 ]; then
+              echo "Archivo de respaldo subido correctamente a $OBJECT_KEY en el bucket {{ .Values.jobs.backup.push.bucket }}"
+            else
+              echo "Error al subir el archivo de respaldo."
+              exit 1
+            fi
+          {{- end }}
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.backup.siteName }}"
