@@ -66,7 +66,6 @@ spec:
               exit 1
             fi
           {{- end }}
-          {{- end }}
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.backup.siteName }}"
