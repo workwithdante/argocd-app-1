@@ -35,7 +35,7 @@ spec:
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
             echo "Site Name: $SITE_NAME";
-            echo "Backup Files: $$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.gz$' | tail -n 1);
+            echo "Backup Files: $(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.gz$' | tail -n 1);
             echo "Filtered Backup Files: $(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.gz$' | tail -n 1)";
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.gz$' | tail -n 1);
             echo "Selected Backup File: $BACKUP_FILE";
