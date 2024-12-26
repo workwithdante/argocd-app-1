@@ -35,7 +35,7 @@ spec:
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '^backup.*\.tar$' | tail -n 1);
-            echo $BACKUP_FILE;
+            echo \$BACKUP_FILE;
             echo $SITE_NAME;
             SIGNATURE=$(echo -n "PUT\n\n\n$BACKUP_FILE\n\napplication/octet-stream" | openssl sha1 -hmac $SECRET_KEY | openssl base64 -A);
             curl -X PUT "{{ .Values.jobs.backup.push.endpoint }}/{{ .Values.jobs.backup.push.bucket }}/$BACKUP_FILE" \
