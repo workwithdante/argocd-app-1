@@ -339,8 +339,8 @@ jobs:
       enabled: true
       bucket: "erpnext"
       region: "us-east-1"
-      accessKey: minio
-      secretKey: minio123
+      accessKey: "minio"
+      secretKey: "minio123"
       endpoint: http://192.168.99.114:9000
     backoffLimit: 0
     resources: {}
@@ -354,7 +354,7 @@ jobs:
     jobName: "restore-job"
     backoffLimit: 1
     minio:
-      endpoint: "store-hl.storage.svc.cluster.local:9000"
+      endpoint: "192.168.99.114:9000"
       bucket: "erpnext"
       accessKey: "minio"
       secretKey: "minio123"
