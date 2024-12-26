@@ -332,7 +332,7 @@ jobs:
 
   backup:
     # jobName: ""
-    enabled: false
+    enabled: true
     siteName: "erp.mabecenter.org"
     withFiles: true
     push:
@@ -341,7 +341,7 @@ jobs:
       region: "us-east-1"
       accessKey: minio
       secretKey: minio123
-      endpoint: http://store-hl.storage.svc.cluster.local:9000
+      endpoint: http://192.168.99.114:9000
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
@@ -349,7 +349,7 @@ jobs:
     affinity: {}
   
   restore:
-    enabled: true
+    enabled: false
     siteName: "erp.mabecenter.org"
     jobName: "restore-job"
     backoffLimit: 1
