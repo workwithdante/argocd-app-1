@@ -274,7 +274,7 @@ ingress:
   enabled: true
   annotations: {}
   hosts:
-  - host: erp.cluster.local
+  - host: erp.mabecenter.org
     paths:
     - path: /
       pathType: Prefix
@@ -306,7 +306,7 @@ jobs:
     # jobName: ""
     enabled: true
     forceCreate: false
-    siteName: "erp.cluster.local"
+    siteName: "erp.mabecenter.org"
     adminPassword: "changeit"
     installApps:
     - "erpnext"
@@ -323,7 +323,7 @@ jobs:
     # jobName: ""
     enabled: false
     forced: false
-    siteName: "erp.cluster.local"
+    siteName: "erp.mabecenter.org"
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
@@ -333,7 +333,7 @@ jobs:
   backup:
     # jobName: ""
     enabled: false
-    siteName: "erp.cluster.local"
+    siteName: "erp.mabecenter.org"
     withFiles: true
     push:
       enabled: true
@@ -349,8 +349,8 @@ jobs:
     affinity: {}
   
   restore:
-    enabled: false
-    siteName: "erp.cluster.local"
+    enabled: true
+    siteName: "erp.mabecenter.org"
     jobName: "restore-job"
     backoffLimit: 1
     minio:
@@ -366,7 +366,7 @@ jobs:
   migrate:
     # jobName: ""
     enabled: true
-    siteName: "erp.cluster.local"
+    siteName: "erp.mabecenter.org"
     skipFailing: false
     backoffLimit: 0
     resources: {}
