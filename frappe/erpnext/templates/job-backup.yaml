@@ -53,15 +53,8 @@ spec:
             SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
 
             # Realizar la subida del archivo utilizando curl
-            curl -X PUT "$BACKUP_PATH/$OBJECT_KEY" -H "Content-Type: application/octet-stream" -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" --upload-file "/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE"
+            curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" -H "Content-Type: application/octet-stream" -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" --upload-file "/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE"
 
-            # Verificar el resultado de la subida
-            if [ $? -eq 0 ]; then
-              echo "Archivo de respaldo subido correctamente a $OBJECT_KEY en el bucket {{ .Values.jobs.backup.push.bucket }}"
-            else
-              echo "Error al subir el archivo de respaldo."
-              exit 1
-            fi
           {{- end }}
         env:
           - name: "SITE_NAME"
