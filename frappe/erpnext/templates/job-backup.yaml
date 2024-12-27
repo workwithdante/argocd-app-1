@@ -41,16 +41,8 @@ spec:
             echo "Nombre del BASENAME: $BASENAME";
             PREFIX=$(echo "$BASENAME" | cut -d'-' -f1);
             echo "El último prefijo es: $PREFIX";
-
-
-            if [ ! -d "$BACKUP_DIR" ]; then
-              echo "El directorio de backups no existe: $BACKUP_DIR" >&2
-              exit 1
-            fi
-
-            # Listar los archivos en el directorio de backups
-            echo "Contenido del directorio de backups:"
-            $(ls -la "$BACKUP_DIR")
+            JORGE="VARIABLEDEENTORNO";
+            echo "JORGE -> : $JORGE";
 
             # Iterar sobre cada archivo de respaldo con extensión .gz o .json
             for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
