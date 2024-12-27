@@ -27,70 +27,69 @@ spec:
         command: ["bash", "-c"]
         args:
           - >
-              bench --site=$(SITE_NAME)
-            {{- if .Values.jobs.backup.withFiles }}
-              backup --with-files;
-            {{- else }}
-              backup;
-            {{- end }}
-            {{- if .Values.jobs.backup.push.enabled }}
-              echo "Nombre del Sitio: $SITE_NAME"
-              echo "Directorio actual: $(pwd)"
-              echo "Contenido del directorio actual: $(ls -la)"
+            bench --site=$(SITE_NAME)
+          {{- if .Values.jobs.backup.withFiles }}
+            backup --with-files;
+          {{- else }}
+            backup;
+          {{- end }}
+          {{- if .Values.jobs.backup.push.enabled }}
+            echo "Nombre del Sitio: $SITE_NAME"
 
-              BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
-              echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
+            # Obtener el archivo de respaldo más reciente con extensión .gz o .json (ajustar según tus formatos)
+            BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
+            echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
+
+            # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
+            BACKUP_DIR=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
+            echo "Carpeta de Destino: $BACKUP_DIR"
+            # Verificar que el directorio de backups existe
+            if [ ! -d "$BACKUP_DIR" ]; then
+              echo "El directorio de backups no existe: $BACKUP_DIR" >&2
+              exit 1
+            fi
+
+            # Listar los archivos en el directorio de backups
+            echo "Contenido del directorio de backups:"
+            $(ls -la "$BACKUP_DIR")
+
+            # Iterar sobre cada archivo de respaldo con extensión .gz o .json
+            for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
+              echo "Procesando archivo de respaldo: $BACKUP_FILE"
 
               # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
-              BACKUP_DIR=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
-              echo "Carpeta de Destino: $BACKUP_DIR"
-              # Verificar que el directorio de backups existe
-              if [ ! -d "$BACKUP_DIR" ]; then
-                echo "El directorio de backups no existe: $BACKUP_DIR" >&2
-                exit 1
+              DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
+              echo "Carpeta de Destino: $DESTINATION_FOLDER"
+
+              # Construir el path completo dentro del bucket
+              OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
+              echo "Objeto en el Bucket: $OBJECT_KEY"
+
+              # Obtener la fecha actual en el formato requerido por AWS S3
+              DATE=$(date -R)
+              echo "Fecha: $DATE"
+
+              # Crear la firma HMAC para la solicitud PUT
+              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n$DATE\n/$OBJECT_KEY"
+              SIGNATURE=$(echo -en "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+
+              # Realizar la subida del archivo utilizando curl
+              curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
+                -H "Content-Type: application/octet-stream" \
+                -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
+                -H "Date: $DATE" \
+                --upload-file "$BACKUP_DIR/$BACKUP_FILE"
+
+              if [ $? -eq 0 ]; then
+                echo "Subida exitosa de $BACKUP_FILE"
+              else
+                echo "Error al subir $BACKUP_FILE" >&2
               fi
+            done
 
-              # Listar los archivos en el directorio de backups
-              echo "Contenido del directorio de backups:"
-              $(ls -la "$BACKUP_DIR")
+            echo "¡Subida de todos los archivos completada!"
 
-              # Iterar sobre cada archivo de respaldo con extensión .gz o .json
-              for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
-                echo "Procesando archivo de respaldo: $BACKUP_FILE"
-
-                # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
-                DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
-                echo "Carpeta de Destino: $DESTINATION_FOLDER"
-
-                # Construir el path completo dentro del bucket
-                OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
-                echo "Objeto en el Bucket: $OBJECT_KEY"
-
-                # Obtener la fecha actual en el formato requerido por AWS S3
-                DATE=$(date -R)
-                echo "Fecha: $DATE"
-
-                # Crear la firma HMAC para la solicitud PUT
-                STRING_TO_SIGN="PUT\n\napplication/octet-stream\n$DATE\n/$OBJECT_KEY"
-                SIGNATURE=$(echo -en "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
-
-                # Realizar la subida del archivo utilizando curl
-                curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
-                  -H "Content-Type: application/octet-stream" \
-                  -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
-                  -H "Date: $DATE" \
-                  --upload-file "$BACKUP_DIR/$BACKUP_FILE"
-
-                if [ $? -eq 0 ]; then
-                  echo "Subida exitosa de $BACKUP_FILE"
-                else
-                  echo "Error al subir $BACKUP_FILE" >&2
-                fi
-              done
-
-              echo "¡Subida de todos los archivos completada!"
-
-            {{- end }}
+          {{- end }}
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.backup.siteName }}"
