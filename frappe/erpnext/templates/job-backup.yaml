@@ -41,44 +41,34 @@ spec:
             echo "Nombre del BASENAME: $BASENAME";
             PREFIX=$(echo "$BASENAME" | cut -d'-' -f1);
             echo "El último prefijo es: $PREFIX";
-            JORGE="VARIABLEDEENTORNO";
-            echo "JORGE -> : $JORGE";
 
-            # Iterar sobre cada archivo de respaldo con extensión .gz o .json
-            for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
-              echo "Procesando archivo de respaldo: $BACKUP_FILE"
+            BACKUP_DIR="/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/";
 
-              # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
-              DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
-              echo "Carpeta de Destino: $DESTINATION_FOLDER"
+            for BACKUP_FILE in $(ls -1 "$BACKUP_DIR" | grep "^$PREFIX"); do
+              echo "Procesando archivo de respaldo: $BACKUP_FILE";
 
-              # Construir el path completo dentro del bucket
-              OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
-              echo "Objeto en el Bucket: $OBJECT_KEY"
+              DATE=$(date -R);
+              echo "Fecha: $DATE";
 
-              # Obtener la fecha actual en el formato requerido por AWS S3
-              DATE=$(date -R)
-              echo "Fecha: $DATE"
+              OBJECT_KEY="$PREFIX/$BACKUP_FILE";
 
-              # Crear la firma HMAC para la solicitud PUT
-              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n$DATE\n/$OBJECT_KEY"
-              SIGNATURE=$(echo -en "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n$DATE\n/$OBJECT_KEY";
+              SIGNATURE=$(echo -en "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64);
 
-              # Realizar la subida del archivo utilizando curl
               curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
                 -H "Content-Type: application/octet-stream" \
                 -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
                 -H "Date: $DATE" \
-                --upload-file "$BACKUP_DIR/$BACKUP_FILE"
+                --upload-file "$BACKUP_DIR/$BACKUP_FILE";
 
               if [ $? -eq 0 ]; then
-                echo "Subida exitosa de $BACKUP_FILE"
+                echo "Subida exitosa de $BACKUP_FILE";
               else
-                echo "Error al subir $BACKUP_FILE" >&2
+                echo "Error al subir $BACKUP_FILE" >&2;
               fi
-            done
+            done;
 
-            echo "¡Subida de todos los archivos completada!"
+            echo "¡Subida de todos los archivos completada!";
 
           {{- end }}
         env:
