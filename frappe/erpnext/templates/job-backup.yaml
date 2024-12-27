@@ -34,10 +34,7 @@ spec:
             backup;
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
-            $(cat <<EOF > /tmp/script_temp.py
-            print("Hello World 2!")
-            EOF);
-
+            echo 'print("Hello World 2!")' > /tmp/script_temp.py;
             $(python3 /tmp/script_temp.py);
             echo "Ejemplo: $(python3 -c 'print("Hello World!")')"
             echo "Nombre del Sitio: $SITE_NAME";
