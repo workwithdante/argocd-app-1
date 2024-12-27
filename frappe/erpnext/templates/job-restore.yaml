@@ -143,8 +143,6 @@ data:
             "--site", site_name,
             "restore",
             db_backup_sql,
-            f"--db-root-username={root_user}",
-            f"--db-root-password={root_password}"
         ]
 
         # Agregamos --with-files/--with-private-files si hay tar disponibles
@@ -156,6 +154,9 @@ data:
         if private_files_backups:
             restore_cmd.extend(["--with-private-files", private_files_backups[0]])
             print(f"Se restaurarán archivos privados: {private_files_backups[0]}")
+        
+      
+        restore_cmd.extend([f"--db-root-username={root_user}", f"--db-root-password={root_password}")
 
         # 9) Ejecutar bench restore
         print("Ejecutando restore con:", " ".join(restore_cmd))
