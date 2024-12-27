@@ -18,7 +18,6 @@ data:
     import re
 
     print("Starting restore_db.py")
----
 spec:
   backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
   template:
