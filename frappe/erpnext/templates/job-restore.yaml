@@ -156,7 +156,7 @@ data:
             print(f"Se restaurarán archivos privados: {private_files_backups[0]}")
         
       
-        restore_cmd.extend([f"--db-root-username={root_user}", f"--db-root-password={root_password}")
+        restore_cmd.extend([f"--db-root-username={root_user}", f"--db-root-password={root_password}"])
 
         # 9) Ejecutar bench restore
         print("Ejecutando restore con:", " ".join(restore_cmd))
