@@ -35,8 +35,11 @@ spec:
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
             echo "Nombre del Sitio: $SITE_NAME"
-            BACKUP_DIR=$(ls -dt /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | head -n1)
-            echo "La última carpeta creada (o modificada) en Backups es: $BACKUP_DIR"
+            LAST_FILE=$(ls -t /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/* | head -n1)
+            BASENAME=$(basename "$LAST_FILE")
+            PREFIX=$(echo "$BASENAME" | cut -d'-' -f1)
+            echo "El último prefijo es: $PREFIX"
+
 
             if [ ! -d "$BACKUP_DIR" ]; then
               echo "El directorio de backups no existe: $BACKUP_DIR" >&2
