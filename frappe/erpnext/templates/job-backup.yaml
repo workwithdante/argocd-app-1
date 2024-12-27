@@ -37,7 +37,7 @@ spec:
             echo "Nombre del Sitio: $SITE_NAME"
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
             echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
-            BACKUP_DIR=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
+            BACKUP_DIR=$("$BACKUP_FILE" | cut -d'-' -f1)
             echo "Carpeta de Destino: $BACKUP_DIR"
 
             if [ ! -d "$BACKUP_DIR" ]; then
