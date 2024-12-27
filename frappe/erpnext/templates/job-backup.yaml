@@ -35,15 +35,11 @@ spec:
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
             echo "Nombre del Sitio: $SITE_NAME"
-
-            # Obtener el archivo de respaldo más reciente con extensión .gz o .json (ajustar según tus formatos)
             BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
             echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
-
-            # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
             BACKUP_DIR=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
             echo "Carpeta de Destino: $BACKUP_DIR"
-            # Verificar que el directorio de backups existe
+
             if [ ! -d "$BACKUP_DIR" ]; then
               echo "El directorio de backups no existe: $BACKUP_DIR" >&2
               exit 1
