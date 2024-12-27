@@ -34,8 +34,8 @@ spec:
             backup;
           {{- end }}
           {{- if .Values.jobs.backup.push.enabled }}
-            echo "$(python3 -c ' \
-            print("\tHello World!")
+            echo "$(python3 -c '
+            print("Hello World!")
             ')";
             echo "Nombre del Sitio: $SITE_NAME";
             LAST_FILE=$(ls -t /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/* | head -n1);
