@@ -27,22 +27,21 @@ spec:
         command: ["bash", "-c"]
         args:
           - |
-            bench new-site erp.cluster.local --no-mariadb-socket --db-type=mariadb --db-host=mariadb.database.svc.cluster.local --db-port=3306 --admin-password=changeit --mariadb-root-username=root --mariadb-root-password=SMNGg8X66YhT7UfW
-            STORAGE_URL="http://192.168.99.114:9000/erpnext/"
-            AUTH="--user minio:minio123"
-            RESTORE_DIR="/home/frappe/restore"
-            SITE_NAME="{{ .Values.jobs.restore.siteName }}"  # Replace with actual site name if not using templating
+            bench new-site erp.cluster.local --no-mariadb-socket --db-type=mariadb --db-host=mariadb.database.svc.cluster.local --db-port=3306 --admin-password=changeit --mariadb-root-username=root --mariadb-root-password=SMNGg8X66YhT7UfW;
+            STORAGE_URL="http://192.168.99.114:9000/erpnext/";
+            AUTH="--user minio:minio123";
+            RESTORE_DIR="/home/frappe/restore";
+            SITE_NAME="{{ .Values.jobs.restore.siteName }}";
 
-            # Fetch the latest folder from the storage
             FOLDER=$(curl -s "${STORAGE_URL}?list-type=2" \
                 | grep "<Key>" \
                 | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
                 | awk -F'/' '{print $1}' \
-                | sort | uniq | tail -n 1)
+                | sort | uniq | tail -n 1);
 
             if [ -z "$FOLDER" ]; then
-              echo "No folder found."
-              exit 1
+              echo "No folder found.";
+              exit 1;
             fi
 
             echo "Selected folder: $FOLDER"
