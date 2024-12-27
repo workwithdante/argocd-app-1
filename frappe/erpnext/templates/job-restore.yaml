@@ -65,7 +65,7 @@ data:
         # 3) Listar objetos en el bucket
         try:
             response = s3_client.list_objects_v2(Bucket=bucket_name)
-            # Nota: list_objects_v2 devuelve hasta 1000 objetos. 
+            # Nota: list_objects_v2 devuelve hasta 1000 objetos.
             # Si tu bucket tiene más, necesitarás paginación (ContinuationToken).
         except Exception as e:
             print(f"Error al listar objetos en el bucket {bucket_name}: {e}")
@@ -121,7 +121,7 @@ data:
 
         print("Descarga finalizada.")
 
-        # 7) Localizar el archivo de DB
+        # 7) Localizar archivos de DB / Files / Private-Files
         db_files = glob.glob(os.path.join(restore_dir, "*-database.sql.gz"))
         if not db_files:
             print("No se encontró ningún archivo '-database.sql.gz' para restaurar.")
@@ -130,7 +130,11 @@ data:
         db_backup_sql = db_files[0]
         print(f"Archivo de backup encontrado: {db_backup_sql}")
 
-        # 8) Ejecutar bench restore
+        # Buscar si existen archivos de backup de ficheros
+        files_backups = glob.glob(os.path.join(restore_dir, "*-files.tar"))
+        private_files_backups = glob.glob(os.path.join(restore_dir, "*-private-files.tar"))
+
+        # 8) Construir comando de bench restore
         root_user = "root"
         root_password = "SMNGg8X66YhT7UfW"  # Ajustar con la cred real
 
@@ -143,6 +147,17 @@ data:
             f"--db-root-password={root_password}"
         ]
 
+        # Agregamos --with-files/--with-private-files si hay tar disponibles
+        if files_backups:
+            # Tomamos el primero que coincida, si hay varios
+            restore_cmd.extend(["--with-files", files_backups[0]])
+            print(f"Se restaurarán archivos públicos: {files_backups[0]}")
+
+        if private_files_backups:
+            restore_cmd.extend(["--with-private-files", private_files_backups[0]])
+            print(f"Se restaurarán archivos privados: {private_files_backups[0]}")
+
+        # 9) Ejecutar bench restore
         print("Ejecutando restore con:", " ".join(restore_cmd))
         try:
             subprocess.run(restore_cmd, check=True)
@@ -182,10 +197,13 @@ spec:
         {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
       - name: restore
-        # Imagen que contenga Python y bench
+        # Imagen que contenga Python y bench.
+        # Se recomienda que la imagen ya incluya boto3.
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["/bin/sh", "-c"]
+        # Instalamos boto3 "al vuelo" y luego ejecutamos el script.
+        # Lo ideal es que tu imagen ya lo tenga instalado.
         args: ["pip install boto3 && python3 /scripts/restore_db.py"]
         env:
           - name: "SITE_NAME"
@@ -196,7 +214,7 @@ spec:
             value: "{{ .Values.jobs.restore.minio.bucket }}"
           - name: "ACCESS_KEY"
             value: "{{ .Values.jobs.restore.minio.accessKey }}"
-          - name: "SECRET_KEY"  
+          - name: "SECRET_KEY"
             value: "{{ .Values.jobs.restore.minio.secretKey }}"
         resources:
           {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
@@ -206,7 +224,6 @@ spec:
           - name: restore-script
             mountPath: /scripts
             readOnly: true
-
           - name: sites-dir
             mountPath: /home/frappe/frappe-bench/sites
           - name: logs
