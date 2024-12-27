@@ -352,7 +352,7 @@ jobs:
     enabled: true
     siteName: "erp.cluster.local"
     jobName: "restore-job"
-    backoffLimit: 0
+    backoffLimit: 1
     minio:
       endpoint: "http://192.168.99.114:9000"
       bucket: "erpnext"
