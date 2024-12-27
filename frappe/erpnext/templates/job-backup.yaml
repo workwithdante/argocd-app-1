@@ -35,12 +35,8 @@ spec:
             {{- end }}
             {{- if .Values.jobs.backup.push.enabled }}
               echo "Nombre del Sitio: $SITE_NAME"
-
-              # Imprimir el directorio actual
-              echo "Directorio actual:"
-              pwd
-              echo "Contenido del directorio actual:"
-              ls -la
+              echo "Directorio actual: $(pwd)"
+              echo "Contenido del directorio actual: $(ls -la)"
 
               # Directorio de backups (ajustar según la salida anterior)
               BACKUP_DIR="./erp.mabecenter.org/private/backups/"
