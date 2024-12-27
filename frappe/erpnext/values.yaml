@@ -281,7 +281,7 @@ ingress:
 jobs:
   volumePermissions:
     # jobName: ""
-    enabled: false
+    enabled: true
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
