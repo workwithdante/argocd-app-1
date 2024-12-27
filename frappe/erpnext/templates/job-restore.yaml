@@ -1,4 +1,25 @@
 {{- if .Values.jobs.restore.enabled }}
+
+########################################################################
+# 1) ConfigMap con el script Python                                    #
+########################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "erpnext.fullname" . }}-restore-script
+  labels:
+    {{- include "erpnext.labels" . | nindent 4 }}
+data:
+  restore_db.py: |
+    #!/usr/bin/env python3
+    print("Starting restore_db.py")
+    # Aquí puedes poner toda tu lógica de restore
+
+---
+
+########################################################################
+# 2) Job que monta el script y lo ejecuta                              #
+########################################################################
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -9,80 +30,96 @@ metadata:
   {{- end }}
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
-data:
-  restore_db.py: |
-    #!/usr/bin/env python3
-    print("Starting restore_db.py")
-  spec:
-    backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
-    template:
-      spec:
+spec:
+  backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
+  template:
+    spec:
       {{- with .Values.imagePullSecrets }}
-        imagePullSecrets:
-          {{- toYaml . | nindent 8 }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
-        serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
+      serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: restore
+        # Usa la imagen que contenga Python (y bench si lo requieres)
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["python3", "/scripts/restore_db.py"]
+        env:
+          - name: "SITE_NAME"
+            value: "{{ .Values.jobs.restore.siteName }}"
+          - name: "STORAGE_URL"
+            value: "{{ .Values.jobs.restore.endpoint }}"
+        resources:
+          {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
         securityContext:
-          {{- toYaml $.Values.podSecurityContext | nindent 8 }}
-        containers:
-        - name: restore
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python3", "restore_db.py"]
-          env:
-            - name: "SITE_NAME"
-              value: "{{ .Values.jobs.restore.siteName }}"
-            - name: "STORAGE_URL"
-              value: "{{ .Values.jobs.restore.endpoint }}"
-          resources:
-            {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
-          securityContext:
-            {{- toYaml $.Values.securityContext | nindent 10 }}
-          volumeMounts:
-            - name: sites-dir
-              mountPath: /home/frappe/frappe-bench/sites
-            - name: logs
-              mountPath: /home/frappe/frappe-bench/logs
-            - name: restore-dir
-              mountPath: /home/frappe/restore
-        restartPolicy: Never
-        volumes:
+          {{- toYaml $.Values.securityContext | nindent 10 }}
+        volumeMounts:
+          # Montamos el ConfigMap en "/scripts"
+          - name: restore-script
+            mountPath: /scripts
+            readOnly: true
+
           - name: sites-dir
-            {{- if .Values.persistence.worker.enabled }}
-            persistentVolumeClaim:
-              {{- if .Values.persistence.worker.existingClaim }}
-              claimName: {{ .Values.persistence.worker.existingClaim }}
-              {{- else }}
-              claimName: {{ template "erpnext.fullname" . }}
-              {{- end }}
-              readOnly: false
-            {{- else }}
-            emptyDir: {}
-            {{- end }}
+            mountPath: /home/frappe/frappe-bench/sites
           - name: logs
-            {{- if .Values.persistence.logs.enabled }}
-            persistentVolumeClaim:
-              {{- if .Values.persistence.logs.existingClaim }}
-              claimName: {{ .Values.persistence.logs.existingClaim }}
-              {{- else }}
-              claimName: {{ template "erpnext.fullname" . }}-logs
-              {{- end }}
-              readOnly: false
-            {{- else }}
-            emptyDir: {}
-            {{- end }}
+            mountPath: /home/frappe/frappe-bench/logs
           - name: restore-dir
-            emptyDir: {}
-        {{- with .Values.jobs.restore.nodeSelector }}
-        nodeSelector:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.jobs.restore.affinity }}
-        affinity:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.jobs.restore.tolerations }}
-        tolerations:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-  {{- end }}
+            mountPath: /home/frappe/restore
+
+      restartPolicy: Never
+
+      # Volúmenes
+      volumes:
+        # Volume con el ConfigMap
+        - name: restore-script
+          configMap:
+            name: {{ include "erpnext.fullname" . }}-restore-script
+            items:
+              - key: restore_db.py
+                path: restore_db.py
+
+        - name: sites-dir
+          {{- if .Values.persistence.worker.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.persistence.worker.existingClaim }}
+            claimName: {{ .Values.persistence.worker.existingClaim }}
+            {{- else }}
+            claimName: {{ template "erpnext.fullname" . }}
+            {{- end }}
+            readOnly: false
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          {{- if .Values.persistence.logs.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.persistence.logs.existingClaim }}
+            claimName: {{ .Values.persistence.logs.existingClaim }}
+            {{- else }}
+            claimName: {{ template "erpnext.fullname" . }}-logs
+            {{- end }}
+            readOnly: false
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: restore-dir
+          emptyDir: {}
+
+      # nodeSelector, affinity, tolerations, etc.
+      {{- with .Values.jobs.restore.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.jobs.restore.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.jobs.restore.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}
