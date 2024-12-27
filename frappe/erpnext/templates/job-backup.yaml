@@ -36,7 +36,7 @@ spec:
           {{- if .Values.jobs.backup.push.enabled }}
             echo "Nombre del Sitio: $SITE_NAME"
             export LAST_FILE=$(ls -t /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/* | head -n1)
-            echo "Nombre del LAST_FILE: $LAST_FILE"
+          echo "Nombre del LAST_FILE: $LAST_FILE"
             BASENAME=$(basename "$LAST_FILE")
             PREFIX=$(echo "$BASENAME" | cut -d'-' -f1)
             echo "El último prefijo es: $PREFIX"
