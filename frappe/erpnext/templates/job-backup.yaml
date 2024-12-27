@@ -47,19 +47,15 @@ spec:
             for BACKUP_FILE in $(ls -1 "$BACKUP_DIR" | grep "^$PREFIX"); do
               echo "Procesando archivo de respaldo: $BACKUP_FILE";
 
-              DATE=$(date -R);
-              echo "Fecha: $DATE";
-
               OBJECT_KEY="$PREFIX/$BACKUP_FILE";
 
-              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n$DATE\n/$OBJECT_KEY";
-              SIGNATURE=$(echo -en "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64);
+              AUTH=$(echo -n "${ACCESS_KEY}:${SECRET_KEY}" | base64);
+
 
               curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
                 -H "Content-Type: application/octet-stream" \
-                -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
-                -H "Date: $DATE" \
-                --upload-file "$BACKUP_DIR/$BACKUP_FILE";
+                -H "Authorization: Basic ${AUTH}" \
+                -T "$BACKUP_DIR/$BACKUP_FILE";
 
               if [ $? -eq 0 ]; then
                 echo "Subida exitosa de $BACKUP_FILE";
