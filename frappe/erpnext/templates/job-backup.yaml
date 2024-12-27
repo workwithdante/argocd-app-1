@@ -44,7 +44,6 @@ spec:
               # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
               BACKUP_DIR=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
               echo "Carpeta de Destino: $BACKUP_DIR"
-¡
               # Verificar que el directorio de backups existe
               if [ ! -d "$BACKUP_DIR" ]; then
                 echo "El directorio de backups no existe: $BACKUP_DIR" >&2
