@@ -38,8 +38,6 @@ data:
         print(f"Restore dir = {restore_dir}")
 
         # 2) Listar objetos en el endpoint usando `curl -s "<storage_url>?list-type=2"`
-        #    y extraer las etiquetas <Key>...</Key> con RegEx
-        print("Obteniendo lista de objetos en el bucket...")
         try:
             output = subprocess.check_output(
                 ["curl", "-s", f"{storage_url}?list-type=2"],
@@ -56,27 +54,24 @@ data:
             sys.exit(1)
 
         # 3) Determinar la subcarpeta más reciente
-        #    Basado en tu lógica: separas la primera parte antes de '/' y eliges la última en orden
-        folders = set(k.split("/")[0] for k in keys if "/" in k)
+        folders = set(k.split('/')[0] for k in keys if '/' in k)
         if not folders:
             print("No se encontraron subcarpetas en el listado.")
             sys.exit(1)
 
-        # Ordenamos alfabéticamente y tomamos la última
         folder_list_sorted = sorted(folders)
         folder = folder_list_sorted[-1]
         print(f"Subcarpeta seleccionada: {folder}")
 
-        # Filtra las claves que correspondan a la subcarpeta
         to_download = [k for k in keys if k.startswith(folder + "/")]
         if not to_download:
             print(f"No se encontraron archivos dentro de la subcarpeta '{folder}'.")
             sys.exit(1)
 
-        # 4) Crear el directorio de restore si no existe
+        # 4) Crear directorio de restore
         os.makedirs(restore_dir, exist_ok=True)
 
-        # 5) Descargar cada archivo de la subcarpeta
+        # 5) Descargar cada archivo
         for file_key in to_download:
             basename = os.path.basename(file_key)
             if not basename:
@@ -87,28 +82,26 @@ data:
             download_url = f"{storage_url}{file_key}"  # asumiendo que STORAGE_URL termina con '/'
 
             print(f"Descargando {download_url} -> {local_path}")
-            # -f = Fail on HTTP error, -S = Mostrar error
             cmd = ["curl", "-f", "-S", download_url, "-o", local_path]
             ret = subprocess.run(cmd)
             if ret.returncode != 0:
                 print(f"Error al descargar {file_key}")
                 if os.path.exists(local_path):
-                    os.remove(local_path)  # Borra el archivo incompleto
+                    os.remove(local_path)
                 continue
 
         print("Descarga finalizada.")
 
-        # 6) Localizar el archivo de base de datos: "*-database.sql.gz"
+        # 6) Localizar el archivo de DB
         db_files = glob.glob(os.path.join(restore_dir, "*-database.sql.gz"))
         if not db_files:
             print("No se encontró ningún archivo '-database.sql.gz' para restaurar.")
-            sys.exit(0)  # Salimos sin error, pero no restauramos
+            sys.exit(0)
 
         db_backup_sql = db_files[0]
         print(f"Archivo de backup encontrado: {db_backup_sql}")
 
         # 7) Ejecutar bench restore
-        # Ajusta tus credenciales de root según tu entorno
         root_user = "root"
         root_password = "SMNGg8X66YhT7UfW"
 
@@ -122,7 +115,6 @@ data:
         ]
 
         print("Ejecutando restore con:", " ".join(restore_cmd))
-
         try:
             subprocess.run(restore_cmd, check=True)
             print("Restore completado con éxito.")
@@ -130,9 +122,9 @@ data:
             print("Error durante la restauración:", e)
             sys.exit(1)
 
-
     if __name__ == "__main__":
         main()
+
 ---
 
 ########################################################################
@@ -161,7 +153,7 @@ spec:
         {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
       - name: restore
-        # Usa la imagen que contenga Python (y bench si lo requieres)
+        # Imagen que contenga Python y bench
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["python3", "/scripts/restore_db.py"]
@@ -175,7 +167,6 @@ spec:
         securityContext:
           {{- toYaml $.Values.securityContext | nindent 10 }}
         volumeMounts:
-          # Montamos el ConfigMap en "/scripts"
           - name: restore-script
             mountPath: /scripts
             readOnly: true
@@ -189,9 +180,7 @@ spec:
 
       restartPolicy: Never
 
-      # Volúmenes
       volumes:
-        # Volume con el ConfigMap
         - name: restore-script
           configMap:
             name: {{ include "erpnext.fullname" . }}-restore-script
@@ -211,6 +200,7 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+
         - name: logs
           {{- if .Values.persistence.logs.enabled }}
           persistentVolumeClaim:
@@ -223,10 +213,10 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+
         - name: restore-dir
           emptyDir: {}
 
-      # nodeSelector, affinity, tolerations, etc.
       {{- with .Values.jobs.restore.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
