@@ -9,6 +9,16 @@ metadata:
   {{- end }}
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
+data:
+  restore_db.py: |
+    #!/usr/bin/env python3
+    import os
+    import subprocess
+    import sys
+    import re
+
+    print("Starting restore_db.py")
+---
 spec:
   backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
   template:
@@ -24,76 +34,7 @@ spec:
       - name: restore
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["bash", "-c"]
-        args:
-          - |
-            AUTH="--user minio:minio123";
-            RESTORE_DIR="/home/frappe/restore";
-            echo "print RESTORE_DIR: $RESTORE_DIR";
-
-            FOLDER=$(curl -v -s "${STORAGE_URL}?list-type=2" \
-                | grep "<Key>" \
-                | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
-                | awk -F'/' '{print $1}' \
-                | sort | uniq | tail -n 1);
-
-            echo "Selected folder: $FOLDER";
-
-            if [ -z "$FOLDER" ]; then
-              echo "No folder found.";
-              exit 1;
-            fi
-
-            echo "Selected folder: $FOLDER";
-
-            FILES=$(curl -s "${STORAGE_URL}?list-type=2" \
-                | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
-
-            if [ -z "$FILES" ]; then
-              echo "No files found in folder $FOLDER."
-              exit 1
-            fi
-
-            echo "Files to download:"
-            echo "$FILES"
-
-            # Create restore directory if it doesn't exist
-            mkdir -p "$RESTORE_DIR"
-
-            # Download each file
-            for FILE in $FILES; do
-              BASENAME=$(basename "$FILE")
-              if [ -z "$BASENAME" ]; then
-                echo "Invalid file name for $FILE."
-                continue
-              fi
-
-              echo "Downloading $FILE as $BASENAME"
-              # Use -f to fail on HTTP errors and -S for error messages
-              curl -f -S "${STORAGE_URL}${FOLDER}/${FILE}" -o "${RESTORE_DIR}/${BASENAME}"
-
-              echo "$STORAGE_URL $FOLDER / $FILE -> $RESTORE_DIR / $BASENAME"
-              
-              if [ $? -ne 0 ]; then
-                echo "Error downloading $FILE"
-                # Optionally, remove the incomplete file
-                rm -f "${RESTORE_DIR}/${BASENAME}"
-                continue
-              fi
-            done
-
-            echo "Download process completed."
-
-            DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
-
-            #cp ${RESTORE_DIR}/*.json /home/frappe/frappe-bench/sites/${SITE_NAME}/site_config.json
-
-            if [ -n "$DB_BACKUP_SQL" ]; then
-              echo "Found uncompressed database backup: $DB_BACKUP_SQL"
-              bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --db-root-username=root --db-root-password=SMNGg8X66YhT7UfW
-            else
-              echo "No uncompressed database backup found."
-            fi 
+        command: ["python", "/scripts/restore_db.py"]
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
