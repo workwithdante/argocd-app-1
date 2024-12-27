@@ -148,7 +148,7 @@ data:
         # Agregamos --with-files/--with-private-files si hay tar disponibles
         if files_backups:
             # Tomamos el primero que coincida, si hay varios
-            restore_cmd.extend(["--with-files", files_backups[0]])
+            restore_cmd.extend(["--with-public-files", files_backups[0]])
             print(f"Se restaurarán archivos públicos: {files_backups[0]}")
 
         if private_files_backups:
@@ -156,7 +156,7 @@ data:
             print(f"Se restaurarán archivos privados: {private_files_backups[0]}")
         
       
-        restore_cmd.extend([f"--db-root-username={root_user}", f"--db-root-password={root_password}"])
+        # restore_cmd.extend([f"--db-root-username={root_user}", f"--db-root-password={root_password}"])
 
         # 9) Ejecutar bench restore
         print("Ejecutando restore con:", " ".join(restore_cmd))
