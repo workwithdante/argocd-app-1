@@ -12,11 +12,6 @@ metadata:
 data:
   restore_db.py: |
     #!/usr/bin/env python3
-    import os
-    import subprocess
-    import sys
-    import re
-
     print("Starting restore_db.py")
   spec:
     backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
@@ -33,7 +28,7 @@ data:
         - name: restore
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python", "/scripts/restore_db.py"]
+          command: ["python3", "restore_db.py"]
           env:
             - name: "SITE_NAME"
               value: "{{ .Values.jobs.restore.siteName }}"
