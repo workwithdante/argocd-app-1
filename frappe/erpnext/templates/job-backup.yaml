@@ -39,7 +39,9 @@ spec:
               echo "Contenido del directorio actual: $(ls -la)"
 
               # Directorio de backups (ajustar según la salida anterior)
-              BACKUP_DIR="./erp.mabecenter.org/private/backups/"
+              $(BACKUP_DIR="/home/frappe/frappe-bench/$SITE_NAME/private/backups/")
+
+              echo "Nombre del directorio: $BACKUP_DIR"
 
               # Verificar que el directorio de backups existe
               if [ ! -d "$BACKUP_DIR" ]; then
