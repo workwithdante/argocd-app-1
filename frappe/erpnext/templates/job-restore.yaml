@@ -27,13 +27,10 @@ spec:
         command: ["bash", "-c"]
         args:
           - |
-            bench new-site erp.cluster.local --no-mariadb-socket --db-type=mariadb --db-host=mariadb.database.svc.cluster.local --db-port=3306 --admin-password=changeit --mariadb-root-username=root --mariadb-root-password=SMNGg8X66YhT7UfW;
-            STORAGE_URL="http://192.168.99.114:9000/erpnext/";
             AUTH="--user minio:minio123";
             RESTORE_DIR="/home/frappe/restore";
-            SITE_NAME="{{ .Values.jobs.restore.siteName }}";
 
-            FOLDER=$(curl -s "${STORAGE_URL}?list-type=2" \
+            FOLDER=$(curl -v -s "${STORAGE_URL}?list-type=2" \
                 | grep "<Key>" \
                 | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
                 | awk -F'/' '{print $1}' \
@@ -98,6 +95,8 @@ spec:
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
+          - name: "STORAGE_URL"
+            value: "{{ .Values.jobs.restore.endpoint }}"
         resources:
           {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
         securityContext:
