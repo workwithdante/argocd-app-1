@@ -26,7 +26,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["bash", "-c"]
         args:
-          - >
+        - >
             bench --site=$(SITE_NAME)
           {{- if .Values.jobs.backup.withFiles }}
             backup --with-files;
@@ -38,6 +38,12 @@ spec:
 
             # Directorio de backups
             BACKUP_DIR="/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/"
+
+            # Verificar que el directorio de backups existe
+            if [ ! -d "$BACKUP_DIR" ]; then
+              echo "El directorio de backups no existe: $BACKUP_DIR" >&2
+              exit 1
+            fi
 
             # Iterar sobre cada archivo de respaldo con extensión .gz o .json
             for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
@@ -52,13 +58,18 @@ spec:
               echo "Objeto en el Bucket: $OBJECT_KEY"
 
               # Crear la firma HMAC para la solicitud PUT
-              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n\n/$DESTINATION_FOLDER/$BACKUP_FILE"
+              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n\n/$OBJECT_KEY"
               SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+
+              # Obtener la fecha actual en el formato requerido por AWS S3
+              DATE=$(date -R)
+              echo "Fecha: $DATE"
 
               # Realizar la subida del archivo utilizando curl
               curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
                 -H "Content-Type: application/octet-stream" \
                 -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
+                -H "Date: $DATE" \
                 --upload-file "$BACKUP_DIR/$BACKUP_FILE"
 
               if [ $? -eq 0 ]; then
@@ -69,7 +80,6 @@ spec:
             done
 
             echo "¡Subida de todos los archivos completada!"
-
           {{- end }}
         env:
           - name: "SITE_NAME"
