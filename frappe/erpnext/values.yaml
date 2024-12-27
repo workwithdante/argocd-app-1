@@ -304,7 +304,7 @@ jobs:
 
   createSite:
     # jobName: ""
-    enabled: true
+    enabled: false
     forceCreate: false
     siteName: "erp.mabecenter.org"
     adminPassword: "changeit"
@@ -365,7 +365,7 @@ jobs:
 
   migrate:
     # jobName: ""
-    enabled: true
+    enabled: false
     siteName: "erp.mabecenter.org"
     skipFailing: false
     backoffLimit: 0
