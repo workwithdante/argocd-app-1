@@ -184,7 +184,7 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
-  schedule: "20 16 * * *" # Cada día a las 2am
+  schedule: "20 16 * * *"  # Ejecutar a las 16:20 UTC (12:20 COT)
   jobTemplate:
     spec:
       backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
