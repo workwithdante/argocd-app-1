@@ -23,8 +23,8 @@ data:
         print("Starting restore_db.py")
 
         # 1) Leer variables de entorno
-        storage_url = os.environ.get("STORAGE_URL", "")  # p.ej. "http://minio:9000"
-        bucket_name = os.environ.get("BUCKET_NAME", "")  # p.ej. "mi-bucket"
+        storage_url = os.environ.get("STORAGE_URL", "")
+        bucket_name = os.environ.get("BUCKET_NAME", "")
         access_key = os.environ.get("ACCESS_KEY", "")
         secret_key = os.environ.get("SECRET_KEY", "")
         site_name = os.environ.get("SITE_NAME", "")
@@ -192,6 +192,12 @@ spec:
             value: "{{ .Values.jobs.restore.siteName }}"
           - name: "STORAGE_URL"
             value: "{{ .Values.jobs.restore.minio.endpoint }}"
+          - name: "BUCKET_NAME"
+            value: "{{ .Values.jobs.restore.minio.bucket }}"
+          - name: "ACCESS_KEY"
+            value: "{{ .Values.jobs.restore.minio.accessKey }}"
+          - name: "SECRET_KEY"  
+            value: "{{ .Values.jobs.restore.minio.secretKey }}"
         resources:
           {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
         securityContext:
