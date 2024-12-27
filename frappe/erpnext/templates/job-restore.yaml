@@ -184,7 +184,7 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
-  schedule: "0 2 * * *" # Cada día a las 2am
+  schedule: "20 16 * * *" # Cada día a las 2am
   jobTemplate:
     spec:
       backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
