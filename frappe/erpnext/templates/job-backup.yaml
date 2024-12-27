@@ -38,11 +38,13 @@ spec:
               echo "Directorio actual: $(pwd)"
               echo "Contenido del directorio actual: $(ls -la)"
 
-              # Directorio de backups (ajustar según la salida anterior)
-              BACKUP_DIR="/home/frappe/frappe-bench/$SITE_NAME/private/backups/"
+              BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
+              echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
 
-              echo "Nombre del directorio: $BACKUP_DIR"
-
+              # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
+              BACKUP_DIR=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
+              echo "Carpeta de Destino: $BACKUP_DIR"
+¡
               # Verificar que el directorio de backups existe
               if [ ! -d "$BACKUP_DIR" ]; then
                 echo "El directorio de backups no existe: $BACKUP_DIR" >&2
@@ -51,7 +53,7 @@ spec:
 
               # Listar los archivos en el directorio de backups
               echo "Contenido del directorio de backups:"
-              ls -la "$BACKUP_DIR"
+              $(ls -la "$BACKUP_DIR")
 
               # Iterar sobre cada archivo de respaldo con extensión .gz o .json
               for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
