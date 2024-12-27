@@ -29,12 +29,15 @@ spec:
           - |
             AUTH="--user minio:minio123";
             RESTORE_DIR="/home/frappe/restore";
+            echo "print RESTORE_DIR: $RESTORE_DIR";
 
             FOLDER=$(curl -v -s "${STORAGE_URL}?list-type=2" \
                 | grep "<Key>" \
                 | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
                 | awk -F'/' '{print $1}' \
                 | sort | uniq | tail -n 1);
+
+            echo "Selected folder: $FOLDER";
 
             if [ -z "$FOLDER" ]; then
               echo "No folder found.";
