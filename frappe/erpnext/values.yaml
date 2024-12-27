@@ -260,7 +260,7 @@ persistence:
     - ReadWriteMany
   logs:
     # Container based log search and analytics stack recommended
-    enabled: false
+    enabled: true
     # existingClaim: ""
     size: 8Gi
     storageClass: "nfs"
