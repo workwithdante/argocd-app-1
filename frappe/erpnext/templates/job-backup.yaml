@@ -37,7 +37,7 @@ spec:
             echo "Nombre del Sitio: $SITE_NAME"
 
             # Directorio de backups
-            BACKUP_DIR="/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/"
+            BACKUP_DIR=$("/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/")
 
             # Verificar que el directorio de backups existe
             if [ ! -d "$BACKUP_DIR" ]; then
