@@ -41,9 +41,8 @@ spec:
               exit 1;
             fi
 
-            echo "Selected folder: $FOLDER"
+            echo "Selected folder: $FOLDER";
 
-            # Fetch the list of files in the selected folder
             FILES=$(curl -s "${STORAGE_URL}?list-type=2" \
                 | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
 
