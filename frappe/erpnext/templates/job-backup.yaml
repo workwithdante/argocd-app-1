@@ -36,24 +36,39 @@ spec:
           {{- if .Values.jobs.backup.push.enabled }}
             echo "Nombre del Sitio: $SITE_NAME"
 
-            # Obtener el archivo de respaldo más reciente con extensión .gz o .json (ajustar según tus formatos)
-            BACKUP_FILE=$(ls /home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/ | grep -E '\.(gz|json)$' | sort | tail -n 1)
-            echo "Archivo de Respaldo Seleccionado: $BACKUP_FILE"
+            # Directorio de backups
+            BACKUP_DIR="/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/"
 
-            # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
-            DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
-            echo "Carpeta de Destino: $DESTINATION_FOLDER"
+            # Iterar sobre cada archivo de respaldo con extensión .gz o .json
+            for BACKUP_FILE in $(ls "$BACKUP_DIR" | grep -E '\.(gz|json)$'); do
+              echo "Procesando archivo de respaldo: $BACKUP_FILE"
 
-            # Construir el path completo dentro del bucket
-            OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
-            echo "Objeto en el Bucket: $OBJECT_KEY"
+              # Extraer el prefijo de la fecha y hora del nombre del archivo para usarlo como carpeta
+              DESTINATION_FOLDER=$(echo "$BACKUP_FILE" | cut -d'-' -f1)
+              echo "Carpeta de Destino: $DESTINATION_FOLDER"
 
-            # Crear la firma HMAC para la solicitud PUT
-            STRING_TO_SIGN="PUT\n\napplication/octet-stream\n\n/$DESTINATION_FOLDER/$BACKUP_FILE"
-            SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+              # Construir el path completo dentro del bucket
+              OBJECT_KEY="$DESTINATION_FOLDER/$BACKUP_FILE"
+              echo "Objeto en el Bucket: $OBJECT_KEY"
 
-            # Realizar la subida del archivo utilizando curl
-            curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" -H "Content-Type: application/octet-stream" -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" --upload-file "/home/frappe/frappe-bench/sites/$SITE_NAME/private/backups/$BACKUP_FILE"
+              # Crear la firma HMAC para la solicitud PUT
+              STRING_TO_SIGN="PUT\n\napplication/octet-stream\n\n/$DESTINATION_FOLDER/$BACKUP_FILE"
+              SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl sha1 -hmac "$SECRET_KEY" -binary | openssl base64)
+
+              # Realizar la subida del archivo utilizando curl
+              curl -v -X PUT "$BACKUP_PATH/$OBJECT_KEY" \
+                -H "Content-Type: application/octet-stream" \
+                -H "Authorization: AWS $ACCESS_KEY:$SIGNATURE" \
+                --upload-file "$BACKUP_DIR/$BACKUP_FILE"
+
+              if [ $? -eq 0 ]; then
+                echo "Subida exitosa de $BACKUP_FILE"
+              else
+                echo "Error al subir $BACKUP_FILE" >&2
+              fi
+            done
+
+            echo "¡Subida de todos los archivos completada!"
 
           {{- end }}
         env:
