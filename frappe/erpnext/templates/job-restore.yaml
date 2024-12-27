@@ -153,7 +153,7 @@ data:
 
     if __name__ == "__main__":
         main()
-        
+
 ---
 
 ########################################################################
@@ -185,7 +185,8 @@ spec:
         # Imagen que contenga Python y bench
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["python3", "/scripts/restore_db.py"]
+        command: ["/bin/sh", "-c"]
+        args: ["pip install boto3 && python3 /scripts/restore_db.py"]
         env:
           - name: "SITE_NAME"
             value: "{{ .Values.jobs.restore.siteName }}"
