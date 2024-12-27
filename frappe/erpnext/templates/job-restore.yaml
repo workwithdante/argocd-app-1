@@ -18,76 +18,76 @@ data:
     import re
 
     print("Starting restore_db.py")
-spec:
-  backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
-  template:
-    spec:
-    {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-      serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
-      securityContext:
-        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
-      containers:
-      - name: restore
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["python", "/scripts/restore_db.py"]
-        env:
-          - name: "SITE_NAME"
-            value: "{{ .Values.jobs.restore.siteName }}"
-          - name: "STORAGE_URL"
-            value: "{{ .Values.jobs.restore.endpoint }}"
-        resources:
-          {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
+  spec:
+    backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
+    template:
+      spec:
+      {{- with .Values.imagePullSecrets }}
+        imagePullSecrets:
+          {{- toYaml . | nindent 8 }}
+      {{- end }}
+        serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
         securityContext:
-          {{- toYaml $.Values.securityContext | nindent 10 }}
-        volumeMounts:
+          {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+        containers:
+        - name: restore
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "/scripts/restore_db.py"]
+          env:
+            - name: "SITE_NAME"
+              value: "{{ .Values.jobs.restore.siteName }}"
+            - name: "STORAGE_URL"
+              value: "{{ .Values.jobs.restore.endpoint }}"
+          resources:
+            {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 10 }}
+          volumeMounts:
+            - name: sites-dir
+              mountPath: /home/frappe/frappe-bench/sites
+            - name: logs
+              mountPath: /home/frappe/frappe-bench/logs
+            - name: restore-dir
+              mountPath: /home/frappe/restore
+        restartPolicy: Never
+        volumes:
           - name: sites-dir
-            mountPath: /home/frappe/frappe-bench/sites
+            {{- if .Values.persistence.worker.enabled }}
+            persistentVolumeClaim:
+              {{- if .Values.persistence.worker.existingClaim }}
+              claimName: {{ .Values.persistence.worker.existingClaim }}
+              {{- else }}
+              claimName: {{ template "erpnext.fullname" . }}
+              {{- end }}
+              readOnly: false
+            {{- else }}
+            emptyDir: {}
+            {{- end }}
           - name: logs
-            mountPath: /home/frappe/frappe-bench/logs
+            {{- if .Values.persistence.logs.enabled }}
+            persistentVolumeClaim:
+              {{- if .Values.persistence.logs.existingClaim }}
+              claimName: {{ .Values.persistence.logs.existingClaim }}
+              {{- else }}
+              claimName: {{ template "erpnext.fullname" . }}-logs
+              {{- end }}
+              readOnly: false
+            {{- else }}
+            emptyDir: {}
+            {{- end }}
           - name: restore-dir
-            mountPath: /home/frappe/restore
-      restartPolicy: Never
-      volumes:
-        - name: sites-dir
-          {{- if .Values.persistence.worker.enabled }}
-          persistentVolumeClaim:
-            {{- if .Values.persistence.worker.existingClaim }}
-            claimName: {{ .Values.persistence.worker.existingClaim }}
-            {{- else }}
-            claimName: {{ template "erpnext.fullname" . }}
-            {{- end }}
-            readOnly: false
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
-        - name: logs
-          {{- if .Values.persistence.logs.enabled }}
-          persistentVolumeClaim:
-            {{- if .Values.persistence.logs.existingClaim }}
-            claimName: {{ .Values.persistence.logs.existingClaim }}
-            {{- else }}
-            claimName: {{ template "erpnext.fullname" . }}-logs
-            {{- end }}
-            readOnly: false
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
-        - name: restore-dir
-          emptyDir: {}
-      {{- with .Values.jobs.restore.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.restore.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.restore.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-{{- end }}
+            emptyDir: {}
+        {{- with .Values.jobs.restore.nodeSelector }}
+        nodeSelector:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.jobs.restore.affinity }}
+        affinity:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.jobs.restore.tolerations }}
+        tolerations:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+  {{- end }}
