@@ -253,12 +253,13 @@ socketio:
 persistence:
   worker:
     enabled: true
-    # existingClaim: ""
+    # existingClaim: "nfs"
     size: 8Gi
     storageClass: "nfs"
     accessModes:
     - ReadWriteMany
   logs:
+    # Container based log search and analytics stack recommended
     enabled: true
     # existingClaim: ""
     size: 8Gi
@@ -274,6 +275,7 @@ ingress:
   annotations: {}
   hosts:
   - host: erp.mabecenter.org
+
     paths:
     - path: /
       pathType: Prefix
@@ -281,7 +283,7 @@ ingress:
 jobs:
   volumePermissions:
     # jobName: ""
-    enabled: true
+    enabled: false
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
@@ -331,15 +333,15 @@ jobs:
 
   backup:
     # jobName: ""
-    enabled: true
+    enabled: false
     siteName: "erp.mabecenter.org"
     withFiles: true
     push:
       enabled: true
       bucket: "erpnext"
       region: "us-east-1"
-      accessKey: "minio"
-      secretKey: "minio123"
+      accessKey: minio
+      secretKey: minio123
       endpoint: http://192.168.99.114:9000
     backoffLimit: 0
     resources: {}
@@ -353,7 +355,7 @@ jobs:
     jobName: "restore-job"
     backoffLimit: 1
     minio:
-      endpoint: "192.168.99.114:9000"
+      endpoint: "http://192.168.99.114:9000"
       bucket: "erpnext"
       accessKey: "minio"
       secretKey: "minio123"
@@ -364,7 +366,7 @@ jobs:
 
   migrate:
     # jobName: ""
-    enabled: false
+    enabled: true
     siteName: "erp.mabecenter.org"
     skipFailing: false
     backoffLimit: 0
