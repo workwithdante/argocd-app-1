@@ -11,78 +11,80 @@ metadata:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
   schedule: "00 21 * * *"
-  template:
+  jobTemplate:
     spec:
-    {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-      serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
-      securityContext:
-        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
-      containers:
-      - name: backup
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["bash", "-c"]
-        args:
-        - |
-          curl -v -k -X POST \
-            -H "Authorization: token $(API_KEY):$(API_SECRET)" \
-            -H "Content-Type: application/json" \
-            https://192.168.99.113/api/method/frappe.integrations.doctype.s3_backup_settings.s3_backup_settings.take_backups_s3
-        env:
-          - name: "SITE_NAME"
-            value: "{{ .Values.jobs.backup.siteName }}"
-          - name: "API_KEY"
-            value: "{{ .Values.jobs.backup.push.apiKey }}"
-          - name: "API_SECRET"
-            value: "{{ .Values.jobs.backup.push.apiSecret }}"
-        resources:
-          {{- toYaml .Values.jobs.backup.resources | nindent 10 }}
-        securityContext:
-          {{- toYaml $.Values.securityContext | nindent 10 }}
-        volumeMounts:
-          - name: sites-dir
-            mountPath: /home/frappe/frappe-bench/sites
-          - name: logs
-            mountPath: /home/frappe/frappe-bench/logs
-      restartPolicy: Never
-      volumes:
-        - name: sites-dir
-          {{- if .Values.persistence.worker.enabled }}
-          persistentVolumeClaim:
-            {{- if .Values.persistence.worker.existingClaim }}
-            claimName: {{ .Values.persistence.worker.existingClaim }}
-            {{- else }}
-            claimName: {{ template "erpnext.fullname" . }}
-            {{- end }}
-            readOnly: false
-          {{- else }}
-          emptyDir: {}
+      template:
+        spec:
+        {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 8 }}
+        {{- end }}
+          serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
+          securityContext:
+            {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+          containers:
+          - name: backup
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command: ["bash", "-c"]
+            args:
+            - |
+              curl -v -k -X POST \
+                -H "Authorization: token $(API_KEY):$(API_SECRET)" \
+                -H "Content-Type: application/json" \
+                https://192.168.99.113/api/method/frappe.integrations.doctype.s3_backup_settings.s3_backup_settings.take_backups_s3
+            env:
+              - name: "SITE_NAME"
+                value: "{{ .Values.jobs.backup.siteName }}"
+              - name: "API_KEY"
+                value: "{{ .Values.jobs.backup.push.apiKey }}"
+              - name: "API_SECRET"
+                value: "{{ .Values.jobs.backup.push.apiSecret }}"
+            resources:
+              {{- toYaml .Values.jobs.backup.resources | nindent 10 }}
+            securityContext:
+              {{- toYaml $.Values.securityContext | nindent 10 }}
+            volumeMounts:
+              - name: sites-dir
+                mountPath: /home/frappe/frappe-bench/sites
+              - name: logs
+                mountPath: /home/frappe/frappe-bench/logs
+          restartPolicy: Never
+          volumes:
+            - name: sites-dir
+              {{- if .Values.persistence.worker.enabled }}
+              persistentVolumeClaim:
+                {{- if .Values.persistence.worker.existingClaim }}
+                claimName: {{ .Values.persistence.worker.existingClaim }}
+                {{- else }}
+                claimName: {{ template "erpnext.fullname" . }}
+                {{- end }}
+                readOnly: false
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            - name: logs
+              {{- if .Values.persistence.logs.enabled }}
+              persistentVolumeClaim:
+                {{- if .Values.persistence.logs.existingClaim }}
+                claimName: {{ .Values.persistence.logs.existingClaim }}
+                {{- else }}
+                claimName: {{ template "erpnext.fullname" . }}-logs
+                {{- end }}
+                readOnly: false
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+          {{- with .Values.jobs.backup.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
           {{- end }}
-        - name: logs
-          {{- if .Values.persistence.logs.enabled }}
-          persistentVolumeClaim:
-            {{- if .Values.persistence.logs.existingClaim }}
-            claimName: {{ .Values.persistence.logs.existingClaim }}
-            {{- else }}
-            claimName: {{ template "erpnext.fullname" . }}-logs
-            {{- end }}
-            readOnly: false
-          {{- else }}
-          emptyDir: {}
+          {{- with .Values.jobs.backup.affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
           {{- end }}
-      {{- with .Values.jobs.backup.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.backup.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.backup.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+          {{- with .Values.jobs.backup.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
 {{- end }}
