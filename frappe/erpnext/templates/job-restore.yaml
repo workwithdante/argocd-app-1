@@ -184,7 +184,7 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
-  schedule: "35 21 * * *"  # Ejecutar a las 16:20 UTC (12:20 COT)
+  schedule: "15 20 * * *"
   jobTemplate:
     spec:
       template:
