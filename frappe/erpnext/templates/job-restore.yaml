@@ -187,7 +187,6 @@ spec:
   schedule: "35 21 * * *"  # Ejecutar a las 16:20 UTC (12:20 COT)
   jobTemplate:
     spec:
-      backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
       template:
         spec:
           {{- with .Values.imagePullSecrets }}

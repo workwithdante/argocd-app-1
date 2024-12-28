@@ -143,7 +143,6 @@ metadata:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
   schedule: "15 21 * * *"
-  backoffLimit: {{ .Values.jobs.backup.backoffLimit }}
   template:
     spec:
     {{- with .Values.imagePullSecrets }}
