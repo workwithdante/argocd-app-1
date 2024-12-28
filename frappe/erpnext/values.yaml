@@ -333,7 +333,7 @@ jobs:
 
   backup:
     # jobName: ""
-    enabled: false
+    enabled: true
     siteName: "erp.mabecenter.org"
     withFiles: true
     push:
