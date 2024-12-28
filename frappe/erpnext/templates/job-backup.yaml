@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
-  schedule: "00 21 * * *"
+  schedule: "10 20 * * *"
   jobTemplate:  # Corrección: Usar jobTemplate
     spec:
       template:
