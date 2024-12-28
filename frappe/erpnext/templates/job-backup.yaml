@@ -1,6 +1,135 @@
+{{- if .Values.jobs.backup.push.enabled }}
+
+#######################################################################
+# 1) ConfigMap con el script Python                               #
+#######################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "erpnext.fullname" . }}-restore-script
+  labels:
+    {{- include "erpnext.labels" . | nindent 4 }}
+data:
+  upload_db.py: |
+    import os
+    import sys
+    import subprocess
+    import boto3
+    from botocore.config import Config
+    import glob
+    import shutil
+
+    def main():
+        print("Starting backup and upload script")
+
+        # 1) Leer variables de entorno
+        storage_url = os.environ.get("STORAGE_URL", "")
+        bucket_name = os.environ.get("BUCKET_NAME", "")
+        access_key = os.environ.get("ACCESS_KEY", "")
+        secret_key = os.environ.get("SECRET_KEY", "")
+        site_name = os.environ.get("SITE_NAME", "")
+        backup_dir = f"/home/frappe/frappe-bench/sites/{site_name}/private/backups"  # Directorio donde se generan los backups
+
+        # Validaciones básicas
+        if not storage_url:
+            print("Error: STORAGE_URL no está definido.")
+            sys.exit(1)
+        if not bucket_name:
+            print("Error: BUCKET_NAME no está definido.")
+            sys.exit(1)
+        if not access_key or not secret_key:
+            print("Error: ACCESS_KEY o SECRET_KEY no están definidos.")
+            sys.exit(1)
+        if not site_name:
+            print("Error: SITE_NAME no está definido.")
+            sys.exit(1)
+
+        print(f"STORAGE_URL = {storage_url}")
+        print(f"BUCKET_NAME = {bucket_name}")
+        print(f"SITE_NAME   = {site_name}")
+        print(f"Backup dir  = {backup_dir}")
+
+        # 2) Ejecutar el comando `bench backup --with-files`
+        backup_cmd = [
+            "bench",
+            "--site", site_name,
+            "backup",
+            "--with-files"
+        ]
+        print("Ejecutando backup:", " ".join(backup_cmd))
+        try:
+            subprocess.run(backup_cmd, check=True)
+            print("Backup completado con éxito.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error al ejecutar el backup: {e}")
+            sys.exit(1)
+
+        # 3) Identificar archivos generados por el backup
+        backup_files = glob.glob(os.path.join(backup_dir, "*"))
+        if not backup_files:
+            print("No se encontraron archivos de backup en el directorio.")
+            sys.exit(1)
+
+        # Filtrar archivos relevantes
+        prefix = None
+        required_files = []
+        for file in backup_files:
+            basename = os.path.basename(file)
+            if basename.endswith("-database.sql.gz"):
+                prefix = basename.split("-")[0]
+            if any(basename.endswith(ext) for ext in ["-database.sql.gz", "-files.tar", "-private-files.tar", "-site_config_backup.json"]):
+                required_files.append(file)
+
+        if not prefix:
+            print("No se encontró un archivo con prefijo válido para crear la carpeta.")
+            sys.exit(1)
+
+        if len(required_files) < 4:
+            print("No se encontraron todos los archivos esperados para el backup.")
+            sys.exit(1)
+
+        # Crear carpeta con el prefijo
+        backup_folder = os.path.join(backup_dir, prefix)
+        os.makedirs(backup_folder, exist_ok=True)
+
+        # Mover archivos a la carpeta
+        for file in required_files:
+            shutil.move(file, os.path.join(backup_folder, os.path.basename(file)))
+
+        print(f"Archivos movidos a la carpeta: {backup_folder}")
+
+        # 4) Subir la carpeta al bucket
+        try:
+            s3_client = boto3.client(
+                's3',
+                endpoint_url=storage_url,                # MinIO/S3 endpoint
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                config=Config(signature_version='s3v4')  # Asegura la firma para S3/MinIO
+            )
+        except Exception as e:
+            print(f"Error al inicializar el cliente S3: {e}")
+            sys.exit(1)
+
+        # Subir cada archivo de la carpeta
+        for file in glob.glob(os.path.join(backup_folder, "*")):
+            s3_path = f"{prefix}/{os.path.basename(file)}"
+            print(f"Subiendo {file} -> {s3_path}")
+            try:
+                s3_client.upload_file(file, bucket_name, s3_path)
+                print(f"Archivo {os.path.basename(file)} subido con éxito.")
+            except Exception as e:
+                print(f"Error al subir {file}: {e}")
+
+        print("Backup y subida completados.")
+
+    if __name__ == "__main__":
+        main()
+
+---
 {{- if .Values.jobs.backup.enabled }}
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   {{- if .Values.jobs.backup.jobName }}
   name: {{ .Values.jobs.backup.jobName }}
@@ -10,6 +139,7 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
+  schedule: "15 21 * * *"
   backoffLimit: {{ .Values.jobs.backup.backoffLimit }}
   template:
     spec:
