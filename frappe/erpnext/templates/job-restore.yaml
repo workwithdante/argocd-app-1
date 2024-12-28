@@ -1,6 +1,180 @@
 {{- if .Values.jobs.restore.enabled }}
+
+#######################################################################
+# 1) ConfigMap con el script Python                               #
+#######################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "erpnext.fullname" . }}-restore-script
+  labels:
+    {{- include "erpnext.labels" . | nindent 4 }}
+data:
+  restore_db.py: |
+    import os
+    import sys
+    import re
+    import subprocess
+    import glob
+    import boto3
+    from botocore.config import Config
+
+    def main():
+        print("Starting restore_db.py")
+
+        # 1) Leer variables de entorno
+        storage_url = os.environ.get("STORAGE_URL", "")
+        bucket_name = os.environ.get("BUCKET_NAME", "")
+        access_key = os.environ.get("ACCESS_KEY", "")
+        secret_key = os.environ.get("SECRET_KEY", "")
+        site_name = os.environ.get("SITE_NAME", "")
+        restore_dir = "/home/frappe/restore"
+
+        # Validaciones básicas
+        if not storage_url:
+            print("Error: STORAGE_URL no está definido.")
+            sys.exit(1)
+        if not bucket_name:
+            print("Error: BUCKET_NAME no está definido.")
+            sys.exit(1)
+        if not access_key or not secret_key:
+            print("Error: ACCESS_KEY o SECRET_KEY no están definidos.")
+            sys.exit(1)
+        if not site_name:
+            print("Error: SITE_NAME no está definido.")
+            sys.exit(1)
+
+        print(f"STORAGE_URL = {storage_url}")
+        print(f"BUCKET_NAME = {bucket_name}")
+        print(f"SITE_NAME   = {site_name}")
+        print(f"Restore dir = {restore_dir}")
+
+        # 2) Conectarse al bucket con boto3
+        try:
+            s3_client = boto3.client(
+                's3',
+                endpoint_url=storage_url,                # MinIO/S3 endpoint
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                config=Config(signature_version='s3v4')  # Asegura la firma para S3/MinIO
+            )
+        except Exception as e:
+            print(f"Error al inicializar el cliente S3: {e}")
+            sys.exit(1)
+
+        # 3) Listar objetos en el bucket
+        try:
+            response = s3_client.list_objects_v2(Bucket=bucket_name)
+            # Nota: list_objects_v2 devuelve hasta 1000 objetos.
+            # Si tu bucket tiene más, necesitarás paginación (ContinuationToken).
+        except Exception as e:
+            print(f"Error al listar objetos en el bucket {bucket_name}: {e}")
+            sys.exit(1)
+
+        if 'Contents' not in response:
+            print(f"No se encontraron archivos en el bucket {bucket_name}.")
+            sys.exit(1)
+
+        # Obtener las claves de los objetos
+        all_keys = [obj['Key'] for obj in response['Contents']]
+        if not all_keys:
+            print("No se encontraron archivos (Key) en el bucket.")
+            sys.exit(1)
+
+        # 4) Determinar la subcarpeta más reciente
+        #    (Suponiendo que las "subcarpetas" son el primer segmento antes de un '/')
+        folders = set(k.split('/')[0] for k in all_keys if '/' in k)
+        if not folders:
+            print("No se encontraron subcarpetas en el listado.")
+            sys.exit(1)
+
+        folder_list_sorted = sorted(folders)
+        folder = folder_list_sorted[-1]
+        print(f"Subcarpeta seleccionada: {folder}")
+
+        # Filtrar los objetos que empiecen con esa carpeta
+        to_download = [k for k in all_keys if k.startswith(folder + "/")]
+        if not to_download:
+            print(f"No se encontraron archivos dentro de la subcarpeta '{folder}'.")
+            sys.exit(1)
+
+        # 5) Crear directorio de restore
+        os.makedirs(restore_dir, exist_ok=True)
+
+        # 6) Descargar cada archivo
+        for file_key in to_download:
+            basename = os.path.basename(file_key)
+            if not basename:
+                print(f"Archivo con nombre inválido: {file_key}. Se omite.")
+                continue
+
+            local_path = os.path.join(restore_dir, basename)
+
+            print(f"Descargando {file_key} -> {local_path}")
+            try:
+                s3_client.download_file(bucket_name, file_key, local_path)
+            except Exception as e:
+                print(f"Error al descargar {file_key}: {e}")
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+                continue
+
+        print("Descarga finalizada.")
+
+        # 7) Localizar archivos de DB / Files / Private-Files
+        db_files = glob.glob(os.path.join(restore_dir, "*-database.sql.gz"))
+        if not db_files:
+            print("No se encontró ningún archivo '-database.sql.gz' para restaurar.")
+            sys.exit(0)
+
+        db_backup_sql = db_files[0]
+        print(f"Archivo de backup encontrado: {db_backup_sql}")
+
+        # Buscar si existen archivos de backup de ficheros
+        files_backups = glob.glob(os.path.join(restore_dir, "*-files.tar"))
+        private_files_backups = glob.glob(os.path.join(restore_dir, "*-private-files.tar"))
+
+        # 8) Construir comando de bench restore
+        root_user = "root"
+        root_password = "SMNGg8X66YhT7UfW"  # Ajustar con la cred real
+
+        restore_cmd = [
+            "bench",
+            "--site", site_name,
+            "restore",
+            db_backup_sql,
+        ]
+
+        # Agregamos --with-public-files/--with-private-files si hay tar disponibles
+        if files_backups:
+            # Tomamos el primero que coincida, si hay varios
+            restore_cmd.extend(["--with-public-files", files_backups[0]])
+            print(f"Se restaurarán archivos públicos: {files_backups[0]}")
+
+        if private_files_backups:
+            restore_cmd.extend(["--with-private-files", private_files_backups[0]])
+            print(f"Se restaurarán archivos privados: {private_files_backups[0]}")
+
+        restore_cmd.extend([f"--db-root-username={root_user}", f"--db-root-password={root_password}"])
+
+        # 9) Ejecutar bench restore
+        print("Ejecutando restore con:", " ".join(restore_cmd))
+        try:
+            subprocess.run(restore_cmd, check=True)
+            print("Restore completado con éxito.")
+        except subprocess.CalledProcessError as e:
+            print("Error durante la restauración:", e)
+            sys.exit(1)
+
+    if __name__ == "__main__":
+        main()
+
+---
+#######################################################################
+# 2) CronJob que monta el script y lo ejecuta                      #
+#######################################################################
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   {{- if .Values.jobs.restore.jobName }}
   name: {{ .Values.jobs.restore.jobName }}
@@ -10,144 +184,105 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
-  backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
-  template:
+  schedule: "35 21 * * *"  # Ejecutar a las 16:20 UTC (12:20 COT)
+  jobTemplate:
     spec:
-    {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-      serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
-      securityContext:
-        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
-      containers:
-      - name: restore
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["bash", "-c"]
-        args:
-          - |
-            bench new-site erp.mabecenter.org --no-mariadb-socket --db-type=mariadb --db-host=mariadb.database.svc.cluster.local --db-port=3306 --admin-password=changeit --mariadb-root-username=root --mariadb-root-password=SMNGg8X66YhT7UfW
-            STORAGE_URL="http://192.168.99.114:9000/erpnext/"
-            AUTH="--user minio:minio123"
-            RESTORE_DIR="/home/frappe/restore"
-            SITE_NAME="{{ .Values.jobs.restore.siteName }}"  # Replace with actual site name if not using templating
-
-            # Fetch the latest folder from the storage
-            FOLDER=$(curl -s "${STORAGE_URL}?list-type=2" \
-                | grep "<Key>" \
-                | sed -n "s:.*<Key>\(.*\)</Key>.*:\1:p" \
-                | awk -F'/' '{print $1}' \
-                | sort | uniq | tail -n 1)
-
-            if [ -z "$FOLDER" ]; then
-              echo "No folder found."
-              exit 1
-            fi
-
-            echo "Selected folder: $FOLDER"
-
-            # Fetch the list of files in the selected folder
-            FILES=$(curl -s "${STORAGE_URL}?list-type=2" \
-                | grep -oP "(?<=<Key>${FOLDER}/).*?(?=</Key>)")
-
-            if [ -z "$FILES" ]; then
-              echo "No files found in folder $FOLDER."
-              exit 1
-            fi
-
-            echo "Files to download:"
-            echo "$FILES"
-
-            # Create restore directory if it doesn't exist
-            mkdir -p "$RESTORE_DIR"
-
-            # Download each file
-            for FILE in $FILES; do
-              BASENAME=$(basename "$FILE")
-              if [ -z "$BASENAME" ]; then
-                echo "Invalid file name for $FILE."
-                continue
-              fi
-
-              echo "Downloading $FILE as $BASENAME"
-              # Use -f to fail on HTTP errors and -S for error messages
-              curl -f -S "${STORAGE_URL}${FOLDER}/${FILE}" -o "${RESTORE_DIR}/${BASENAME}"
-
-              echo "$STORAGE_URL $FOLDER / $FILE -> $RESTORE_DIR / $BASENAME"
-              
-              if [ $? -ne 0 ]; then
-                echo "Error downloading $FILE"
-                # Optionally, remove the incomplete file
-                rm -f "${RESTORE_DIR}/${BASENAME}"
-                continue
-              fi
-            done
-
-            echo "Download process completed."
-
-            DB_BACKUP_SQL=$(ls ${RESTORE_DIR}/*-database.sql.gz 2>/dev/null)
-
-            #cp ${RESTORE_DIR}/*.json /home/frappe/frappe-bench/sites/${SITE_NAME}/site_config.json
-
-            if [ -n "$DB_BACKUP_SQL" ]; then
-              echo "Found uncompressed database backup: $DB_BACKUP_SQL"
-              bench --site "$SITE_NAME" restore "$DB_BACKUP_SQL" --db-root-username=root --db-root-password=SMNGg8X66YhT7UfW
-            else
-              echo "No uncompressed database backup found."
-            fi 
-        env:
-          - name: "SITE_NAME"
-            value: "{{ .Values.jobs.restore.siteName }}"
-        resources:
-          {{- toYaml .Values.jobs.restore.resources | nindent 10 }}
-        securityContext:
-          {{- toYaml $.Values.securityContext | nindent 10 }}
-        volumeMounts:
-          - name: sites-dir
-            mountPath: /home/frappe/frappe-bench/sites
-          - name: logs
-            mountPath: /home/frappe/frappe-bench/logs
-          - name: restore-dir
-            mountPath: /home/frappe/restore
-      restartPolicy: Never
-      volumes:
-        - name: sites-dir
-          {{- if .Values.persistence.worker.enabled }}
-          persistentVolumeClaim:
-            {{- if .Values.persistence.worker.existingClaim }}
-            claimName: {{ .Values.persistence.worker.existingClaim }}
-            {{- else }}
-            claimName: {{ template "erpnext.fullname" . }}
-            {{- end }}
-            readOnly: false
-          {{- else }}
-          emptyDir: {}
+      backoffLimit: {{ .Values.jobs.restore.backoffLimit }}
+      template:
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-        - name: logs
-          {{- if .Values.persistence.logs.enabled }}
-          persistentVolumeClaim:
-            {{- if .Values.persistence.logs.existingClaim }}
-            claimName: {{ .Values.persistence.logs.existingClaim }}
-            {{- else }}
-            claimName: {{ template "erpnext.fullname" . }}-logs
-            {{- end }}
-            readOnly: false
-          {{- else }}
-          emptyDir: {}
+          serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
+          securityContext:
+            {{- toYaml $.Values.podSecurityContext | nindent 12 }}
+          containers:
+          - name: restore
+            # Imagen que contenga Python y bench.
+            # Se recomienda que la imagen ya incluya boto3.
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command: ["/bin/sh", "-c"]
+            # Instalamos boto3 "al vuelo" y luego ejecutamos el script.
+            # Lo ideal es que tu imagen ya lo tenga instalado.
+            args: ["pip install boto3 && python3 /scripts/restore_db.py"]
+            env:
+              - name: "SITE_NAME"
+                value: "{{ .Values.jobs.backup.siteName }}"
+              - name: "STORAGE_URL"
+                value: "{{ .Values.jobs.backup.push.endpoint }}"
+              - name: "BUCKET_NAME"
+                value: "{{ .Values.jobs.backup.push.bucket }}"
+              - name: "ACCESS_KEY"
+                value: "{{ .Values.jobs.backup.push.accessKey }}"
+              - name: "SECRET_KEY"
+                value: "{{ .Values.jobs.backup.push.secretKey }}"
+            resources:
+              {{- toYaml .Values.jobs.restore.resources | nindent 14 }}
+            securityContext:
+              {{- toYaml $.Values.securityContext | nindent 14 }}
+            volumeMounts:
+              - name: restore-script
+                mountPath: /scripts
+                readOnly: true
+              - name: sites-dir
+                mountPath: /home/frappe/frappe-bench/sites
+              - name: logs
+                mountPath: /home/frappe/frappe-bench/logs
+              - name: restore-dir
+                mountPath: /home/frappe/restore
+
+          restartPolicy: Never
+
+          volumes:
+            - name: restore-script
+              configMap:
+                name: {{ include "erpnext.fullname" . }}-restore-script
+                items:
+                  - key: restore_db.py
+                    path: restore_db.py
+
+            - name: sites-dir
+              {{- if .Values.persistence.worker.enabled }}
+              persistentVolumeClaim:
+                {{- if .Values.persistence.worker.existingClaim }}
+                claimName: {{ .Values.persistence.worker.existingClaim }}
+                {{- else }}
+                claimName: {{ template "erpnext.fullname" . }}
+                {{- end }}
+                readOnly: false
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+
+            - name: logs
+              {{- if .Values.persistence.logs.enabled }}
+              persistentVolumeClaim:
+                {{- if .Values.persistence.logs.existingClaim }}
+                claimName: {{ .Values.persistence.logs.existingClaim }}
+                {{- else }}
+                claimName: {{ template "erpnext.fullname" . }}-logs
+                {{- end }}
+                readOnly: false
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+
+            - name: restore-dir
+              emptyDir: {}
+
+          {{- with .Values.jobs.restore.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-        - name: restore-dir
-          emptyDir: {}
-      {{- with .Values.jobs.restore.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.restore.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.restore.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+          {{- with .Values.jobs.restore.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.jobs.restore.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
 {{- end }}

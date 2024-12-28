@@ -1,3 +1,4 @@
+{{- if .Values.jobs.backup.enabled }}
 {{- if .Values.jobs.backup.push.enabled }}
 
 #######################################################################
@@ -127,7 +128,9 @@ data:
         main()
 
 ---
-{{- if .Values.jobs.backup.enabled }}
+#######################################################################
+# 2) CronJob que monta el script y lo ejecuta                      #
+#######################################################################
 apiVersion: batch/v1
 kind: CronJob
 metadata:
