@@ -27,7 +27,7 @@ spec:
         command: ["bash", "-c"]
         args:
         - |
-          curl -k -X POST \
+          curl -v -k -X POST \
             -H "Authorization: token $(API_KEY):$(API_SECRET)" \
             -H "Content-Type: application/json" \
             https://$(SITE_NAME)/api/method/frappe.integrations.doctype.s3_backup_settings.s3_backup_settings.take_backups_s3
