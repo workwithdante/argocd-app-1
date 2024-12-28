@@ -11,17 +11,17 @@ metadata:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
   schedule: "00 21 * * *"
-  jobTemplate:
+  jobTemplate:  # Corrección: Usar jobTemplate
     spec:
       template:
         spec:
-        {{- with .Values.imagePullSecrets }}
+          {{- with .Values.imagePullSecrets }}
           imagePullSecrets:
-            {{- toYaml . | nindent 8 }}
-        {{- end }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           serviceAccountName: {{ template "erpnext.serviceAccountName" $ }}
           securityContext:
-            {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+            {{- toYaml $.Values.podSecurityContext | nindent 12 }}
           containers:
           - name: backup
             image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -41,15 +41,15 @@ spec:
               - name: "API_SECRET"
                 value: "{{ .Values.jobs.backup.push.apiSecret }}"
             resources:
-              {{- toYaml .Values.jobs.backup.resources | nindent 10 }}
+              {{- toYaml .Values.jobs.backup.resources | nindent 14 }}
             securityContext:
-              {{- toYaml $.Values.securityContext | nindent 10 }}
+              {{- toYaml $.Values.securityContext | nindent 14 }}
             volumeMounts:
               - name: sites-dir
                 mountPath: /home/frappe/frappe-bench/sites
               - name: logs
                 mountPath: /home/frappe/frappe-bench/logs
-          restartPolicy: Never
+          restartPolicy: Never  # Mover dentro de template.spec
           volumes:
             - name: sites-dir
               {{- if .Values.persistence.worker.enabled }}
@@ -77,14 +77,14 @@ spec:
               {{- end }}
           {{- with .Values.jobs.backup.nodeSelector }}
           nodeSelector:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.jobs.backup.affinity }}
           affinity:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.jobs.backup.tolerations }}
           tolerations:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
 {{- end }}
