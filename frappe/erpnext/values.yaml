@@ -338,11 +338,8 @@ jobs:
     withFiles: true
     push:
       enabled: true
-      bucket: "erpnext"
-      region: "us-east-1"
-      accessKey: minio
-      secretKey: minio123
-      endpoint: http://192.168.99.114:9000
+      apiKey: "37d3cc844136c59"
+      apiSecret: "be9a1a61762d290"
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
