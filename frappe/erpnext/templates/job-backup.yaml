@@ -1,6 +1,6 @@
 {{- if .Values.jobs.backup.enabled }}
 apiVersion: batch/v1
-kind: CronJob
+kind: Job
 metadata:
   {{- if .Values.jobs.backup.jobName }}
   name: {{ .Values.jobs.backup.jobName }}
@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "erpnext.labels" . | nindent 4 }}
 spec:
-  schedule: "15 21 * * *"
+  backoffLimit: {{ .Values.jobs.createSite.backoffLimit }}
   template:
     spec:
     {{- with .Values.imagePullSecrets }}
