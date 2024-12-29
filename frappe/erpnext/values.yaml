@@ -272,7 +272,10 @@ ingress:
   ingressName: "erpnext-ingress"
   className: "nginx"
   enabled: true
-  annotations: {}
+  annotations: 
+    nginx.ingress.kubernetes.io/hsts: "false"
+    nginx.ingress.kubernetes.io/hsts-max-age: "0"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
   hosts:
   - host: erp.cluster.local
     paths:
