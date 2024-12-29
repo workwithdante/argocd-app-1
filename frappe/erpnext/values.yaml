@@ -274,15 +274,31 @@ ingress:
   enabled: true
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/enable-websocket: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
   hosts:
     - host: erp.mabecenter.org
       paths:
+        - path: /socket.io
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: socketio
+              port:
+                number: 9000
         - path: /
           pathType: Prefix
+          backend:
+            service:
+              name: erpnext
+              port:
+                number: 8080
   tls:
     - secretName: erpnext-tls
       hosts:
         - erp.mabecenter.org
+
 
 
 jobs:
