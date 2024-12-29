@@ -273,7 +273,6 @@ ingress:
   className: "nginx"
   enabled: true
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Añade esta línea para usar Cert-Manager
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
@@ -285,6 +284,7 @@ ingress:
     - secretName: erpnext-tls
       hosts:
         - erp.cluster.local
+
 
 jobs:
   volumePermissions:
