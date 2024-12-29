@@ -252,11 +252,7 @@ socketio:
   service:
     type: ClusterIP
     port: 9000
-  envVars: 
-    - name: SOCKETIO_TRANSPORTS
-      value: "websocket"
-    - name: DEBUG
-      value: "socket.io:*" # Para habilitar logs detallados si es necesario
+  envVars: []
   initContainers: []
   sidecars: []
 
