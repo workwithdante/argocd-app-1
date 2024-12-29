@@ -272,15 +272,19 @@ ingress:
   ingressName: "erpnext-ingress"
   className: "nginx"
   enabled: true
-  annotations: 
-    nginx.ingress.kubernetes.io/hsts: "false"
-    nginx.ingress.kubernetes.io/hsts-max-age: "0"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Añade esta línea para usar Cert-Manager
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
-  - host: erp.cluster.local
-    paths:
-    - path: /
-      pathType: Prefix
+    - host: erp.cluster.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: erpnext-tls
+      hosts:
+        - erp.cluster.local
 
 jobs:
   volumePermissions:
