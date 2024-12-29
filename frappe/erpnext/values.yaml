@@ -273,6 +273,7 @@ ingress:
   className: "nginx"
   enabled: true
   annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -288,7 +289,6 @@ ingress:
     - secretName: erpnext-tls
       hosts:
         - erp.cluster.local
-
 
 jobs:
   volumePermissions:
