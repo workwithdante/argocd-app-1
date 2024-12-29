@@ -283,22 +283,11 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
-    nginx.ingress.kubernetes.io/proxy-set-headers: "ingress-nginx/proxy-headers"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
   hosts:
     - host: erp.mabecenter.org
       paths:
         - path: /
           pathType: Prefix
-        - path: /socket.io
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: erpnext-socketio
-              port:
-                number: 9000
   tls:
     - secretName: erpnext-tls
       hosts:
@@ -388,7 +377,7 @@ jobs:
 
   migrate:
     # jobName: ""
-    enabled: false
+    enabled: true
     siteName: "erp.mabecenter.org"
     skipFailing: false
     backoffLimit: 0
