@@ -244,7 +244,7 @@ socketio:
   tolerations: []
   affinity: {}
   service:
-    type: ClusterIP
+    type: NodePort
     port: 9000
   envVars: []
   initContainers: []
