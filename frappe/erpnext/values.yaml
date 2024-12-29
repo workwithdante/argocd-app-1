@@ -272,13 +272,18 @@ ingress:
   ingressName: "erpnext-ingress"
   className: "nginx"
   enabled: true
-  annotations: {}
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
-  - host: erp.mabecenter.org
+    - host: erp.mabecenter.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: erpnext-tls
+      hosts:
+        - erp.mabecenter.org
 
-    paths:
-    - path: /
-      pathType: Prefix
 
 jobs:
   volumePermissions:
