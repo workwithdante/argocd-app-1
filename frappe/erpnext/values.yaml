@@ -290,8 +290,13 @@ ingress:
   hosts:
     - host: erp.mabecenter.org
       paths:
-        - path: /
-          pathType: Prefix
+        - path: /socket.io
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: erpnext-socketio
+              port:
+                number: 9000
   tls:
     - secretName: erpnext-tls
       hosts:
