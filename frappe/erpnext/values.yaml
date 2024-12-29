@@ -252,7 +252,11 @@ socketio:
   service:
     type: ClusterIP
     port: 9000
-  envVars: []
+  envVars: 
+    - name: SOCKETIO_TRANSPORTS
+      value: "websocket"
+    - name: DEBUG
+      value: "socket.io:*" # Para habilitar logs detallados si es necesario
   initContainers: []
   sidecars: []
 
@@ -388,7 +392,7 @@ jobs:
 
   migrate:
     # jobName: ""
-    enabled: true
+    enabled: false
     siteName: "erp.mabecenter.org"
     skipFailing: false
     backoffLimit: 0
