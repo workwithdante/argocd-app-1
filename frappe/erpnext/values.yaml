@@ -222,10 +222,10 @@ worker:
     periodSeconds: 5
 
 socketio:
-  replicaCount: 1
+  replicaCount: 2
   autoscaling:
-    enabled: false
-    minReplicas: 1
+    enabled: true
+    minReplicas: 2
     maxReplicas: 3
     targetCPU: 75
     targetMemory: 75
