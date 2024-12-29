@@ -39,9 +39,9 @@ spec:
           {{- end }}
           env:
             - name: "BACKEND"
-              value: "{{ .Values.gunicorn.service.name }}.erpnext.svc.cluster.local:{{ .Values.gunicorn.service.port }}"
+              value: "erpnext-gunicorn.erpnext.svc.cluster.local:8000"
             - name: "SOCKETIO"
-              value: "{{ .Values.socketio.service.name }}.erpnext.svc.cluster.local:{{ .Values.socketio.service.port }}"
+              value: "erpnext-socketio.erpnext.svc.cluster.local:9000"
             - name: "UPSTREAM_REAL_IP_ADDRESS"
               value: {{ .Values.nginx.environment.upstreamRealIPAddress | quote }}
             - name: "UPSTREAM_REAL_IP_RECURSIVE"
