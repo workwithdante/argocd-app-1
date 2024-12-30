@@ -11,7 +11,7 @@ dbRds: false
 
 image:
   repository: mabecenter/erpnext
-  tag: 0.0.1-42b2b99
+  tag: 0.0.1-311d151
   pullPolicy: IfNotPresent
 
 nginx:
@@ -311,6 +311,7 @@ jobs:
     installApps:
     - "erpnext"
     - "mabecenter"
+    - "hrms"
     dbType: "mariadb"
     backoffLimit: 0
     resources: {}
