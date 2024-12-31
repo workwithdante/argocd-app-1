@@ -279,6 +279,10 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+  tls:
+    - secretName: erpnext-tls
+      hosts:
+        - erp.cluster.local
 
 jobs:
   volumePermissions:
