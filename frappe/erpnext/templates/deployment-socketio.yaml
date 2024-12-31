@@ -17,7 +17,7 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}-socketio
     spec:
       hostAliases:
-        - ip: "127.0.0.1"
+        - ip: "10.152.183.172"
           hostnames:
             - "erp.mabecenter.org"
     {{- with .Values.imagePullSecrets }}
