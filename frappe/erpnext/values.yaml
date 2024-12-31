@@ -28,7 +28,7 @@ nginx:
     upstreamRealIPAddress: "127.0.0.1"
     upstreamRealIPRecursive: "off"
     upstreamRealIPHeader: "X-Forwarded-For"
-    frappeSiteNameHeader: "$host"
+    frappeSiteNameHeader: "erp.cluster.local"
   livenessProbe:
     tcpSocket:
       port: 8080
