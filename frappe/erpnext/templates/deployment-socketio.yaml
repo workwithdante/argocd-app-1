@@ -16,6 +16,10 @@ spec:
         app.kubernetes.io/name: {{ include "erpnext.name" . }}-socketio
         app.kubernetes.io/instance: {{ .Release.Name }}-socketio
     spec:
+    hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "erp.mabecenter.org"
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
