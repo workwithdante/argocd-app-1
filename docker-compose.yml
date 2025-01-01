@@ -1,11 +1,9 @@
 services:
 
   erpnext-image: &erpnext_image
-    image: mabecenter/erpnext:${tag}
+    image: mabecenter/erpnext:0.0.1-0c36ceb
     platform: linux/amd64
     pull_policy: always
-    environment:
-      tag: 0.0.1-0c36ceb
       
   backend:
     <<: *erpnext_image
