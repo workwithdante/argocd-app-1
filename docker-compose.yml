@@ -227,6 +227,8 @@ services:
         bench --site dev.mabecenter.org build;
         bench --site dev.mabecenter.org clear-cache;
         bench --site dev.mabecenter.org migrate;
+    env_file:
+      - stack.env
 networks:
   bench-network:
     name: erpnext-one
