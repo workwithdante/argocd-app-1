@@ -226,11 +226,11 @@ services:
         bench --site dev.mabecenter.org install-app mabecenter;
         bench setup requirements;
         bench --site dev.mabecenter.org migrate;
+        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
         bench --site dev.mabecenter.org build;
         bench --site dev.mabecenter.org clear-cache;
         bench --site dev.mabecenter.org clear-website-cache;
-        sudo chmod o+rx /home/frappe;
-        bench restart;
+        chmod o+rx /home/frappe;
     env_file:
       - stack.env
 networks:
