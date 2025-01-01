@@ -80,9 +80,8 @@ services:
       traefik.http.routers.erpnext-one-https.tls: "true"
       traefik.http.routers.erpnext-one-https.tls.certresolver: le
       traefik.http.services.erpnext-one.loadbalancer.server.port: "8080"
-      traefik.http.middlewares.websocket-headers.headers.customrequestheaders.Upgrade: "websocket"
-      traefik.http.middlewares.websocket-headers.headers.customrequestheaders.Connection: "Upgrade"
-      traefik.http.routers.erpnext-one-https.middlewares: websocket-headers
+    extra_hosts:
+      - "dev.mabecenter.org:host-gateway"
     networks:
       bench-network: null
       traefik-public: null
