@@ -1,7 +1,7 @@
 services:
 
   erpnext-image: &erpnext_image
-    image: mabecenter/erpnext:0.0.1-485484a
+    image: mabecenter/erpnext:0.0.1-20327ea
     platform: linux/amd64
     pull_policy: always
       
