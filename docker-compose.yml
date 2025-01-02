@@ -208,11 +208,13 @@ services:
       - -c
     command:
       - >
+        chmod -R o+rx /home/frappe;
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default dev.mabecenter.org;
         bench --site dev.mabecenter.org install-app hrms;
         bench --site dev.mabecenter.org install-app mabecenter;
         bench setup requirements;
         bench setup production frappe --yes;
+        bench --site dev.mabecenter.org update --reset;
         bench --site dev.mabecenter.org migrate;
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
         bench --site dev.mabecenter.org build --force;
