@@ -230,7 +230,7 @@ services:
         bench --site dev.mabecenter.org build --force;
         bench --site dev.mabecenter.org clear-cache;
         bench --site dev.mabecenter.org clear-website-cache;
-        sudo chmod -R o+rx /home/frappe
+        chmod -R o+rx /home/frappe
     env_file:
       - stack.env
     user: root
