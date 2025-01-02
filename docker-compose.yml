@@ -208,29 +208,22 @@ services:
       - -c
     command:
       - >
-        export start=`date +%s`;
-        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && \
-          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] && \
-          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
-        do
-          echo "Waiting for sites/common_site_config.json to be created";
-          sleep 5;
-          if (( `date +%s`-start > 120 )); then
-            echo "could not find sites/common_site_config.json with required keys";
-            exit 1
-          fi
-        done;
-        echo "sites/common_site_config.json found";
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default dev.mabecenter.org;
         bench --site dev.mabecenter.org install-app hrms;
         bench --site dev.mabecenter.org install-app mabecenter;
         bench setup requirements;
+        bench setup production frappe --yes;
         bench --site dev.mabecenter.org migrate;
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
         bench --site dev.mabecenter.org build --force;
+        bench --site dev.mabecenter.org enable-scheduler;
+        bench --site dev.mabecenter.org set-maintenance-mode off
         bench --site dev.mabecenter.org clear-cache;
         bench --site dev.mabecenter.org clear-website-cache;
-        chmod -R o+rx /home/frappe
+        bench --site dev.mabecenter.org add-to-hosts;
+        systemctl reload nginx;
+        supervisorctl restart all;
+        chmod -R o+rx /home/frappe;
     env_file:
       - stack.env
     user: root
