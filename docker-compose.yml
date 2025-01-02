@@ -229,6 +229,7 @@ services:
         systemctl reload nginx;
         supervisorctl restart all;
         chmod -R o+rx /home/frappe;
+        
     env_file:
       - stack.env
     user: root
