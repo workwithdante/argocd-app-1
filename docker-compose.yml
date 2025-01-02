@@ -216,6 +216,7 @@ services:
         bench --site dev.mabecenter.org migrate;
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
         bench --site dev.mabecenter.org build --force;
+        bench --site dev.mabecenter.org build --production;
         bench --site dev.mabecenter.org enable-scheduler;
         bench --site dev.mabecenter.org set-maintenance-mode off
         bench --site dev.mabecenter.org clear-cache;
