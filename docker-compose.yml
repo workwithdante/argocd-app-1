@@ -1,8 +1,10 @@
 services:
+
   erpnext-image: &erpnext_image
-    image: mabecenter/erpnext:0.0.1-311d151
+    image: mabecenter/erpnext:0.0.1-20327ea
     platform: linux/amd64
     pull_policy: always
+      
   backend:
     <<: *erpnext_image
     depends_on:
@@ -78,6 +80,8 @@ services:
       traefik.http.routers.erpnext-one-https.tls: "true"
       traefik.http.routers.erpnext-one-https.tls.certresolver: le
       traefik.http.services.erpnext-one.loadbalancer.server.port: "8080"
+    extra_hosts:
+      - "erp.mabecenter.org:host-gateway"
     networks:
       bench-network: null
       traefik-public: null
@@ -186,6 +190,48 @@ services:
       volume: {}
     extra_hosts:
       - "erp.mabecenter.org:host-gateway"
+  create-site:
+    <<: *erpnext_image
+    networks:
+      bench-network: null
+      mariadb-network: null
+    deploy:
+      restart_policy:
+        condition: none
+    volumes:
+    - type: volume
+      source: sites
+      target: /home/frappe/frappe-bench/sites
+      volume: {}
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        chmod -R o+rx /home/frappe;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default erp.mabecenter.org;
+        bench --site erp.mabecenter.org install-app hrms;
+        bench --site erp.mabecenter.org install-app mabecenter;
+        bench setup requirements;
+        bench setup production frappe --yes;
+        bench --site erp.mabecenter.org update --reset;
+        bench --site erp.mabecenter.org migrate;
+        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
+        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets-rtl.json
+        bench build --app frappe --hard-link --production;
+        bench build --app erpnext --hard-link --production;
+        bench build --app mabecenter --hard-link --production;
+        bench --site erp.mabecenter.org enable-scheduler;
+        bench --site erp.mabecenter.org set-maintenance-mode off
+        bench --site erp.mabecenter.org clear-cache;
+        bench --site erp.mabecenter.org clear-website-cache;
+        bench --site erp.mabecenter.org add-to-hosts;
+        systemctl reload nginx;
+        supervisorctl restart all;
+        chmod -R o+rx /home/frappe;
+    env_file:
+      - stack.env
+    user: root
 networks:
   bench-network:
     name: erpnext-one
