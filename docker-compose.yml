@@ -221,6 +221,7 @@ services:
         bench build --app frappe --hard-link --production;
         bench build --app erpnext --hard-link --production;
         bench build --app mabecenter --hard-link --production;
+        bench --site dev.mabecenter.org migrate;
         bench --site dev.mabecenter.org enable-scheduler;
         bench --site dev.mabecenter.org set-maintenance-mode off
         bench --site dev.mabecenter.org clear-cache;
