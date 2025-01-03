@@ -235,7 +235,6 @@ services:
 networks:
   bench-network:
     name: erpnext-one
-    external: true
   mariadb-network:
     name: mariadb-network
     external: true
