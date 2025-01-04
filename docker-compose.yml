@@ -208,25 +208,16 @@ services:
       - -c
     command:
       - >
-        chmod -R o+rx /home/frappe;
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default dev.mabecenter.org;
         bench --site dev.mabecenter.org install-app hrms;
         bench --site dev.mabecenter.org install-app mabecenter;
-        bench --site dev.mabecenter.org update --reset;
-        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
-        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets-rtl.json
         bench build --app frappe --hard-link --production;
         bench build --app erpnext --hard-link --production;
         bench build --app mabecenter --hard-link --production;
-        bench --site dev.mabecenter.org enable-scheduler;
-        bench --site dev.mabecenter.org set-maintenance-mode off
         bench --site dev.mabecenter.org clear-cache;
         bench --site dev.mabecenter.org clear-website-cache;
-        bench --site dev.mabecenter.org add-to-hosts;
-        systemctl reload nginx;
-        supervisorctl restart all;
-        chmod -R o+rx /home/frappe;
         bench --site dev.mabecenter.org migrate;
+        chmod -R o+rx /home/frappe;
     env_file:
       - stack.env
     user: root
