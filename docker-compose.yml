@@ -212,7 +212,6 @@ services:
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default dev.mabecenter.org;
         bench --site dev.mabecenter.org install-app hrms;
         bench --site dev.mabecenter.org install-app mabecenter;
-        bench setup production frappe --yes;
         bench --site dev.mabecenter.org update --reset;
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets-rtl.json
