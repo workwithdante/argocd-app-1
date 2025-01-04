@@ -215,13 +215,11 @@ services:
         bench setup requirements;
         bench setup production frappe --yes;
         bench --site dev.mabecenter.org update --reset;
-        bench --site dev.mabecenter.org migrate;
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
         echo "{}" > /home/frappe/frappe-bench/sites/assets/assets-rtl.json
         bench build --app frappe --hard-link --production;
         bench build --app erpnext --hard-link --production;
         bench build --app mabecenter --hard-link --production;
-        bench --site dev.mabecenter.org migrate;
         bench --site dev.mabecenter.org enable-scheduler;
         bench --site dev.mabecenter.org set-maintenance-mode off
         bench --site dev.mabecenter.org clear-cache;
@@ -230,6 +228,7 @@ services:
         systemctl reload nginx;
         supervisorctl restart all;
         chmod -R o+rx /home/frappe;
+        bench --site dev.mabecenter.org migrate;
     env_file:
       - stack.env
     user: root
