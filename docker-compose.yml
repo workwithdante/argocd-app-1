@@ -209,15 +209,14 @@ services:
     command:
       - >
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default dev.mabecenter.org;
-        bench --site dev.mabecenter.org install-app hrms;
-        bench --site dev.mabecenter.org install-app mabecenter;
+        bench install-app hrms;
+        bench install-app mabecenter;
         bench build --app frappe --hard-link --production;
         bench build --app erpnext --hard-link --production;
         bench build --app mabecenter --hard-link --production;
-        bench --site dev.mabecenter.org clear-cache;
-        bench --site dev.mabecenter.org clear-website-cache;
-        bench --site dev.mabecenter.org migrate;
-        chmod -R o+rx /home/frappe;
+        bench clear-cache;
+        bench clear-website-cache;
+        bench migrate;
     env_file:
       - stack.env
     user: root
