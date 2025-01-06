@@ -1,7 +1,7 @@
 services:
 
   erpnext-image: &erpnext_image
-    image: mabecenter/erpnext:0.0.1-20327ea
+    image: mabecenter/erpnext:0.0.1-b5b50aa
     platform: linux/amd64
     pull_policy: always
       
@@ -208,30 +208,20 @@ services:
       - -c
     command:
       - >
-        chmod -R o+rx /home/frappe;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default erp.mabecenter.org;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --install-app erpnext --set-default erp.mabecenter.org;
+        bench --site erp.mabecenter.org install-app erpnext;
         bench --site erp.mabecenter.org install-app hrms;
-        bench --site erp.mabecenter.org install-app mabecenter;
-        bench --site erp.mabecenter.org update --reset;
+        bench --site erp.mabecenter.org install-app raven;
+        bench --site erp.mabecenter.org install-app mabecenter --force;
         bench --site erp.mabecenter.org migrate;
-        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
-        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets-rtl.json
-        bench build --app frappe --hard-link --production;
-        bench build --app erpnext --hard-link --production;
-        bench build --app mabecenter --hard-link --production;
-        bench --site erp.mabecenter.org enable-scheduler;
-        bench --site erp.mabecenter.org set-maintenance-mode off
         bench --site erp.mabecenter.org clear-cache;
         bench --site erp.mabecenter.org clear-website-cache;
-        bench --site erp.mabecenter.org add-to-hosts;
-        chmod -R o+rx /home/frappe;
+        bench --site erp.mabecenter.org enable-scheduler;
     env_file:
       - stack.env
-    user: root
 networks:
   bench-network:
     name: erpnext-one
-    external: true
   mariadb-network:
     name: mariadb-network
     external: true
