@@ -222,7 +222,6 @@ services:
         bench migrate;
     env_file:
       - stack.env
-    user: root
 networks:
   bench-network:
     name: erpnext-one
