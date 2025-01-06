@@ -211,6 +211,7 @@ services:
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --install-app erpnext --set-default dev.mabecenter.org;
         bench --site dev.mabecenter.org install-app erpnext;
         bench --site dev.mabecenter.org install-app hrms;
+        bench --site dev.mabecenter.org install-app raven;
         bench --site dev.mabecenter.org install-app mabecenter --force;
         bench --site dev.mabecenter.org migrate;
         bench --site dev.mabecenter.org clear-cache;
