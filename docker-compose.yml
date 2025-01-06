@@ -208,6 +208,7 @@ services:
       - -c
     command:
       - >
+        echo "Jorge Devia";
         bench install-app hrms;
         bench install-app mabecenter;
         bench build;
