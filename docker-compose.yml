@@ -1,7 +1,7 @@
 services:
 
   erpnext-image: &erpnext_image
-    image: mabecenter/erpnext:0.0.1-b5781ab
+    image: mabecenter/erpnext:0.0.1-20327ea
     platform: linux/amd64
     pull_policy: always
       
@@ -208,18 +208,27 @@ services:
       - -c
     command:
       - >
-        echo "bench install-app hrms";
-        bench install-app hrms;
-        echo "bench install-app mabecenter";
-        bench install-app mabecenter;
-        echo "bench build";
-        bench build;
-        echo "bench clear-cache";
-        bench clear-cache;
-        echo "bench clear-website-cache";
-        bench clear-website-cache;
-        echo "bench migrate";
-        bench migrate;
+        chmod -R o+rx /home/frappe;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --install-app erpnext --set-default dev.mabecenter.org;
+        bench --site dev.mabecenter.org install-app hrms;
+        bench --site dev.mabecenter.org install-app mabecenter;
+        bench setup requirements;
+        bench setup production frappe --yes;
+        bench --site dev.mabecenter.org update --reset;
+        bench --site dev.mabecenter.org migrate;
+        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets.json
+        echo "{}" > /home/frappe/frappe-bench/sites/assets/assets-rtl.json
+        bench build --app frappe --hard-link --production;
+        bench build --app erpnext --hard-link --production;
+        bench build --app mabecenter --hard-link --production;
+        bench --site dev.mabecenter.org enable-scheduler;
+        bench --site dev.mabecenter.org set-maintenance-mode off
+        bench --site dev.mabecenter.org clear-cache;
+        bench --site dev.mabecenter.org clear-website-cache;
+        bench --site dev.mabecenter.org add-to-hosts;
+        systemctl reload nginx;
+        supervisorctl restart all;
+        chmod -R o+rx /home/frappe;
     env_file:
       - stack.env
 networks:
