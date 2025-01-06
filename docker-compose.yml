@@ -208,12 +208,17 @@ services:
       - -c
     command:
       - >
-        echo "Jorge Devia";
+        echo "bench install-app hrms";
         bench install-app hrms;
+        echo "bench install-app mabecenter";
         bench install-app mabecenter;
+        echo "bench build";
         bench build;
+        echo "bench clear-cache";
         bench clear-cache;
+        echo "bench clear-website-cache";
         bench clear-website-cache;
+        echo "bench migrate";
         bench migrate;
     env_file:
       - stack.env
