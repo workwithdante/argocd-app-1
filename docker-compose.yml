@@ -82,6 +82,7 @@ services:
       traefik.http.services.erpnext-one.loadbalancer.server.port: "8080"
     extra_hosts:
       - "dev.mabecenter.org:host-gateway"
+      - "relay.mabecenter.org:192.168.99.114"
     networks:
       bench-network: null
       traefik-public: null
