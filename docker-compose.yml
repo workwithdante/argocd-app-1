@@ -20,6 +20,8 @@ services:
       source: sites
       target: /home/frappe/frappe-bench/sites
       volume: {}
+    extra_hosts:
+      - "relay.mabecenter.org:192.168.99.114"
   configurator:
     <<: *erpnext_image
     command:
@@ -82,6 +84,7 @@ services:
       traefik.http.services.erpnext-one.loadbalancer.server.port: "8080"
     extra_hosts:
       - "erp.mabecenter.org:host-gateway"
+      - "relay.mabecenter.org:192.168.99.114"
     networks:
       bench-network: null
       traefik-public: null
