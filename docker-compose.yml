@@ -221,6 +221,7 @@ services:
         bench --site erp.mabecenter.org clear-cache;
         bench --site erp.mabecenter.org clear-website-cache;
         bench --site erp.mabecenter.org enable-scheduler;
+        bench build
     env_file:
       - stack.env
 networks:
