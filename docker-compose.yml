@@ -221,6 +221,7 @@ services:
         bench --site dev.mabecenter.org clear-cache;
         bench --site dev.mabecenter.org clear-website-cache;
         bench --site dev.mabecenter.org enable-scheduler;
+        bench build;
     env_file:
       - stack.env
 networks:
