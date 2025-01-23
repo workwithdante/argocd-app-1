@@ -215,6 +215,7 @@ services:
         bench --site erp.mabecenter.org install-app erpnext;
         bench --site erp.mabecenter.org install-app hrms;
         bench --site erp.mabecenter.org install-app raven;
+        bench --site erp.mabecenter.org install-app drive;
         bench --site erp.mabecenter.org install-app mabecenter --force;
         bench --site erp.mabecenter.org migrate;
         bench --site erp.mabecenter.org clear-cache;
