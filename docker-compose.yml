@@ -15,8 +15,6 @@ services:
       mariadb-network: null
     platform: linux/amd64
     pull_policy: always
-    extra_hosts:
-      - "relay.mabecenter.org:192.168.99.114"
     volumes:
     - type: volume
       source: sites
@@ -63,7 +61,7 @@ services:
     environment:
       BACKEND: backend:8000
       CLIENT_MAX_BODY_SIZE: 50m
-      FRAPPE_SITE_NAME_HEADER: dev.mabecenter.org
+      FRAPPE_SITE_NAME_HEADER: sync.mabecenter.org
       PROXY_READ_TIMEOUT: "120"
       SOCKETIO: websocket:9000
       UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
@@ -74,16 +72,16 @@ services:
       traefik.enable: "true"
       traefik.http.routers.erpnext-one-http.entrypoints: http
       traefik.http.routers.erpnext-one-http.middlewares: https-redirect
-      traefik.http.routers.erpnext-one-http.rule: Host(`dev.mabecenter.org`)
+      traefik.http.routers.erpnext-one-http.rule: Host(`sync.mabecenter.org`)
       traefik.http.routers.erpnext-one-http.service: erpnext-one
       traefik.http.routers.erpnext-one-https.entrypoints: https
-      traefik.http.routers.erpnext-one-https.rule: Host(`dev.mabecenter.org`)
+      traefik.http.routers.erpnext-one-https.rule: Host(`sync.mabecenter.org`)
       traefik.http.routers.erpnext-one-https.service: erpnext-one
       traefik.http.routers.erpnext-one-https.tls: "true"
       traefik.http.routers.erpnext-one-https.tls.certresolver: le
       traefik.http.services.erpnext-one.loadbalancer.server.port: "8080"
     extra_hosts:
-      - "dev.mabecenter.org:host-gateway"
+      - "sync.mabecenter.org:host-gateway"
       - "relay.mabecenter.org:192.168.99.114"
     networks:
       bench-network: null
@@ -192,7 +190,7 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
     extra_hosts:
-      - "dev.mabecenter.org:host-gateway"
+      - "sync.mabecenter.org:host-gateway"
   create-site:
     <<: *erpnext_image
     networks:
@@ -211,16 +209,12 @@ services:
       - -c
     command:
       - >
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --install-app erpnext --set-default dev.mabecenter.org;
-        bench --site dev.mabecenter.org install-app erpnext;
-        bench --site dev.mabecenter.org install-app hrms;
-        bench --site dev.mabecenter.org install-app raven;
-        bench --site dev.mabecenter.org install-app drive;
-        bench --site dev.mabecenter.org install-app mabecenter --force;
-        bench --site dev.mabecenter.org migrate;
-        bench --site dev.mabecenter.org clear-cache;
-        bench --site dev.mabecenter.org clear-website-cache;
-        bench --site dev.mabecenter.org enable-scheduler;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --install-app erpnext --set-default sync.mabecenter.org;
+        bench --site sync.mabecenter.org install-app company_sync --force;
+        bench --site sync.mabecenter.org migrate;
+        bench --site sync.mabecenter.org clear-cache;
+        bench --site sync.mabecenter.org clear-website-cache;
+        bench --site sync.mabecenter.org enable-scheduler;
         bench build;
     env_file:
       - stack.env
