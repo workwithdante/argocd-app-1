@@ -209,7 +209,7 @@ services:
       - -c
     command:
       - >
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --install-app erpnext --set-default sync.mabecenter.org;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --set-default sync.mabecenter.org;
         bench --site sync.mabecenter.org install-app company_sync --force;
         bench --site sync.mabecenter.org migrate;
         bench --site sync.mabecenter.org clear-cache;
