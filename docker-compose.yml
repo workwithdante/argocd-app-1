@@ -210,12 +210,13 @@ services:
     command:
       - >
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --set-default sync.mabecenter.org;
-        bench --site sync.mabecenter.org install-app company_sync --force;
-        bench --site sync.mabecenter.org migrate;
-        bench --site sync.mabecenter.org clear-cache;
-        bench --site sync.mabecenter.org clear-website-cache;
-        bench --site sync.mabecenter.org enable-scheduler;
-        bench build;
+        bench install-app company_sync --force;
+        bench build --app frappe --hard-link --production;
+        bench build --app company_sync --hard-link --production;
+        bench migrate;
+        bench clear-cache;
+        bench clear-website-cache;
+        bench enable-scheduler;
     env_file:
       - stack.env
 networks:
