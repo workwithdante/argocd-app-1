@@ -210,6 +210,7 @@ services:
     command:
       - >
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=changeit --admin-password changeit --set-default sync.mabecenter.org;
+        bench use sync.mabecenter.org;
         bench install-app company_sync --force;
         bench build --app frappe --hard-link --production;
         bench build --app company_sync --hard-link --production;
