@@ -224,6 +224,17 @@ services:
         bench enable-scheduler;
     env_file:
       - stack.env
+  populate-assets:
+    <<: *erpnext_image
+    entrypoint: ["sh", "-c"]
+    command:
+      - >
+        cp -fR /usr/share/nginx/html/assets /data;
+    volumes:
+    - type: volume
+      source: sites
+      target: /home/frappe/frappe-bench/sites
+      volume: {}
 networks:
   bench-network:
     name: erpnext-one
