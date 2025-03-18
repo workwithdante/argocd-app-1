@@ -15,11 +15,13 @@ services:
       mariadb-network: null
     platform: linux/amd64
     pull_policy: always
+    user: "1000:1000"
     volumes:
     - type: volume
       source: sites
       target: /home/frappe/frappe-bench/sites
-      volume: {}
+      volume:
+        nocopy: true
   configurator:
     <<: *erpnext_image
     command:
@@ -44,6 +46,7 @@ services:
       mariadb-network: null
     platform: linux/amd64
     pull_policy: always
+    user: "1000:1000"
     volumes:
     - type: volume
       source: sites
@@ -83,6 +86,7 @@ services:
     extra_hosts:
       - "sync.mabecenter.org:host-gateway"
       - "relay.mabecenter.org:192.168.99.114"
+    user: "1000:1000"
     networks:
       bench-network: null
       traefik-public: null
