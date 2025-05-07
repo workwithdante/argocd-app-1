@@ -91,6 +91,7 @@ argocd:
   version: "5.39.4"
   create_namespace: true
   values:
+    installCRDs: true
     server:
       service:
         type: LoadBalancer
