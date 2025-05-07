@@ -1,0 +1,96 @@
+nfs_server:
+  namespace: "nfs"
+  release_name: "in-cluster"
+  repository: "https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner"
+  chart: "nfs-server-provisioner"
+  values:
+    storageClass:
+      mountOptions:
+        - vers: 4.1
+    persistence:
+      enabled: true
+      size: 8Gi
+
+mariadb:
+  namespace: "database"
+  credentials:
+    mariadb-root-password: "SMNGg8X66YhT7UfW"
+    mariadb-replication-password: "SMNGg8X66YhT7UfW"
+    mariadb-password: "SMNGg8X66YhT7UfW"
+  argocd_manifest:
+    apiVersion: "argoproj.io/v1alpha1"
+    kind: "Application"
+    metadata:
+      name: "mariadb"
+      namespace: "argocd"
+    spec:
+      project: "default"
+      source:
+        repoURL: "https://charts.bitnami.com/bitnami"
+        chart: "mariadb"
+        targetRevision: "16.3.2"
+        helm:
+          releaseName: "mariadb"
+          values:
+            architecture: "standalone"
+            auth:
+              existingSecret: "mariadb-credentials"
+            primary:
+              extraFlags: "--character-set-server=utf8mb4 --collation-server=utf8mb4_bin"
+              persistence:
+                enabled: false
+            secondary:
+              replicaCount: 1
+              persistence:
+                enabled: false
+      destination:
+        server: "https://kubernetes.default.svc"
+        namespace: "database"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: true
+        syncOptions:
+          - "CreateNamespace=true"
+          - "ServerSideApply=true"
+
+erpnext:
+  namespace: "erpnext"
+  argocd_manifest:
+    apiVersion: "argoproj.io/v1alpha1"
+    kind: "Application"
+    metadata:
+      name: "erpnext"
+      namespace: "argocd"
+    spec:
+      destination:
+        namespace: "erpnext"
+        server: "https://kubernetes.default.svc"
+      source:
+        repoURL: "https://github.com/mabecenter-it/argocd-app"
+        path: "frappe/erpnext"
+        targetRevision: "main"
+        helm:
+          valueFiles:
+            - "values.yaml"
+      project: "default"
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - "CreateNamespace=true"
+          - "ServerSideApply=true"
+
+argocd:
+  namespace: "argocd"
+  release_name: "argocd"
+  repository: "https://argoproj.github.io/argo-helm"
+  chart: "argo-cd"
+  version: "5.39.4"
+  create_namespace: true
+  values:
+    server:
+      service:
+        type: LoadBalancer
